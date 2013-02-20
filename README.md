@@ -29,10 +29,10 @@ $ gem install memstore
 ## Usage
 
 - [Basics](#basics)
-- [Objects vs. Hashes](#objects-vs-hashes)
-- [Adding Items](#adding-items)
-- [Retrieving Items](#retrieving-items)
-- [Deleting Items](#deleting-items)
+  - [Objects vs. Hashes](#objects-vs-hashes)
+  - [Adding Items](#adding-items)
+  - [Retrieving Items](#retrieving-items)
+  - [Deleting Items](#deleting-items)
 - [Search Queries](#search-queries)
 - [Serialization](#serialization)
   - [Binary](#binary)
@@ -69,7 +69,7 @@ store = MemStore.new(:id, { ... }) # to use custom key
 
 The collection must be a hash that correctly maps the used key to each item.
 
-### Objects vs. Hashes
+#### Objects vs. Hashes
 
 MemStore comes in two flavors: `ObjectStore` and `HashStore`.
 
@@ -91,7 +91,7 @@ store = MemStore::HashStore.new
 
 If no key attribute is specified, `HashStore` will also use `Object#hash`.
 
-### Adding Items
+#### Adding Items
 
 `items` provides direct access to the internal items hash.
 
@@ -124,7 +124,7 @@ store << a << b << c
 # => store
 ```
 
-### Retrieving Items
+#### Retrieving Items
 
 `length` (or `size`) returns the current number of items:
 
@@ -153,7 +153,7 @@ store[1..3, 6]
 # => [a, b, c, f]
 ```
 
-### Deleting Items
+#### Deleting Items
 
 `delete_items` (or `delete_item`) deletes items by reference and returns them.  
 This is considered the default use case and therefore also available as `delete`.
@@ -188,17 +188,17 @@ store.delete_keys(5..7, 9)
 
 The following methods are available to query the data store:
 
-- `find_all` (also available as `find`)
+- `find_all` (alias `find`)
 - `find_any`
 - `find_one`
 - `find_not_all`
 - `find_none`
-- `first_all` (also available as `first`)
+- `first_all` (alias `first`)
 - `first_any`
 - `first_one`
 - `first_not_all`
 - `first_none`
-- `count_all` (also available as `count`)
+- `count_all` (alias `count`)
 - `count_any`
 - `count_one`
 - `count_not_all`
@@ -222,7 +222,7 @@ In other words:
 
 - `all` means `condition && condition && ...`.
 - `any` means `condition || condition || ...`.
-- `one` means `condition ^ condition ^ ...` (XOR).
+- `one` means `condition ^ condition ^ ...`.
 - `not all` means `!(condition && condition && ...)` or `!condition || !condition || ...`.
 - `none` means `!(condition || condition || ...)` or `!condition && !condition && ...`.
 
