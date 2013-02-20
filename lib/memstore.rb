@@ -14,6 +14,10 @@ module MemStore
     ObjectStore.from_file(file)
   end
 
+  def self.with_file(file, key=nil, items={}, &block)
+    ObjectStore.with_file(file, key, items, &block)
+  end
+
   class ObjectStore
 
     def initialize(key=nil, items={})
@@ -142,7 +146,19 @@ module MemStore
       IO.write(file, self.to_binary)
     end
 
+    def self.with_file(file, key=nil, items={}, &block)
+      self.run_with_file(:from_file, :to_file, file, key, items, &block)
+    end
+
     private
+
+    def key(item)
+      item.send(@key)
+    end
+
+    def attr(item, attribute)
+      item.send(attribute)
+    end
   
     FIND_ALL = Proc.new do |item, conditions, block|
         conditions.all? { |attribute, condition| condition === attr(item, attribute) } &&
@@ -164,12 +180,15 @@ module MemStore
           if block then !!block.call(item) else false end
       end
 
-    def key(item)
-      item.send(@key)
-    end
-
-    def attr(item, attribute)
-      item.send(attribute)
+    def self.run_with_file(from_file_method, to_file_method, file, key=nil, items={}, &block)
+      File.open(file) do |file|
+        file.flock(File::LOCK_EX)
+        store = self.send(from_file_method, file) || self.new(key, items)
+        result = block.call(store)
+        store.send(to_file_method, file)
+        file.flock(File::LOCK_UN)
+        result
+      end
     end
 
   end

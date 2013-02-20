@@ -20,6 +20,10 @@ module MemStore
       begin self.from_yaml(IO.read(file)) rescue nil end
     end
 
+    def self.with_yaml_file(file, key=nil, items={}, &block)
+      self.run_with_file(:from_yaml_file, :to_yaml_file, file, key, items, &block)
+    end
+
   end
 
 end

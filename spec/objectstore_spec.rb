@@ -93,4 +93,18 @@ describe MemStore::ObjectStore do
     MemStore::ObjectStore.from_file("does_not_exist").must_equal nil
   end
 
+  it "supports concurrent access to a single binary file" do
+    tmp = Tempfile.new("memstore")
+    fork do
+      MemStore.with_file(tmp, :to_i) { |store| store.insert(1.0, 3.0) }
+    end
+    fork do
+      MemStore.with_file(tmp, :to_i) { |store| store.insert(2.0, 4.0) }
+    end
+    sleep 0.1
+    restored = MemStore.from_file(tmp)
+    restored.items.must_equal({1=>1.0, 2=>2.0, 3=>3.0, 4=>4.0})
+    tmp.unlink
+  end
+
 end

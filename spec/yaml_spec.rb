@@ -26,4 +26,18 @@ describe MemStore::HashStore do
     tmp.unlink
   end
 
+  it "supports concurrent access to a single YAML file" do
+    tmp = Tempfile.new("memstore")
+    fork do
+      MemStore::HashStore.with_yaml_file(tmp, :id) { |store| store.insert({id: 1}, {id: 3}) }
+    end
+    fork do
+      MemStore::HashStore.with_yaml_file(tmp, :id) { |store| store.insert({id: 2}, {id: 4}) }
+    end
+    sleep 0.1
+    restored = MemStore::HashStore.from_yaml_file(tmp)
+    restored.items.must_equal({1=>{id: 1}, 2=>{id: 2}, 3=>{id: 3}, 4=>{id: 4}})
+    tmp.unlink
+  end
+
 end
