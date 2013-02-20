@@ -2,12 +2,16 @@ require "memstore/version"
 
 module MemStore
 
-  def self.new(key=nil)
-    ObjectStore.new(key)
+  def self.new(key=nil, items={})
+    ObjectStore.new(key, items)
+  end
+
+  def self.from_binary(binary)
+    begin Marshal.load(binary) rescue nil end
   end
 
   def self.from_file(file)
-    Marshal.load IO.read(file)
+    begin self.from_binary(IO.read(file)) rescue nil end
   end
 
   class ObjectStore
@@ -32,7 +36,7 @@ module MemStore
     def [](*keys)
       return @items[keys.first] if keys.length == 1 && !keys.first.is_a?(Range)
       keys.inject [] do |items, key|
-        if key.is_a? Range then key.inject(items) { |i, k| i << @items[k] }
+        if key.is_a?(Range) then key.inject(items) { |i, k| i << @items[k] }
         else items << @items[key] end
       end
     end
@@ -51,7 +55,7 @@ module MemStore
     def delete_keys(*keys)
       return @items.delete(keys.first) if keys.length == 1 && !keys.first.is_a?(Range)
       keys.inject [] do |items, key|
-        if key.is_a? Range then key.inject(items) { |i, k| i << @items.delete(k) }
+        if key.is_a?(Range) then key.inject(items) { |i, k| i << @items.delete(k) }
         else items << @items.delete(key) end
       end
     end
@@ -99,8 +103,12 @@ module MemStore
       all.detect { |item| instance_exec(item, conditions, block, &FIND_NONE) }
     end
 
+    def to_binary
+      Marshal.dump(self)
+    end
+
     def to_file(file)
-      IO.write file, Marshal.dump(self)
+      IO.write(file, self.to_binary)
     end
 
     private
@@ -138,7 +146,14 @@ module MemStore
   class HashStore < ObjectStore
 
     def self.from_hash(hash)
-      self.new(hash[:key] || hash["key"], hash[:items] || hash["items"])
+      begin
+        key = hash[:key] || hash["key"]
+        items = hash[:items] || hash["items"]
+        return nil if key.nil? || items.nil?
+        self.new(key, items)
+      rescue
+        nil
+      end
     end
 
     def initialize(key=nil, items={})

@@ -10,15 +10,21 @@ It’s not in any way supposed to be a “real” database. However, it can repl
 
 Add this line to your application's Gemfile:
 
-    gem "memstore"
+```ruby
+gem "memstore"
+```
 
 And then execute:
 
-    $ bundle
+```sh
+$ bundle
+```
 
 Or install it yourself as:
 
-    $ gem install memstore
+```sh
+$ gem install memstore
+```
 
 ## Usage
 
@@ -40,7 +46,7 @@ Or install it yourself as:
 Creating a data store is utterly simple:
 
 ```ruby
-mb = MemStore.new
+store = MemStore.new
 ```
 
 By default, objects are indexed using `Object#hash`.
@@ -48,7 +54,7 @@ By default, objects are indexed using `Object#hash`.
 If a different property should be used, it can be specified like this:
 
 ```ruby
-mb = MemStore.new(:id)
+store = MemStore.new(:id)
 ```
 
 The property needs to be truly unique for all objects since it’s used as a hash key internally.
@@ -56,8 +62,8 @@ The property needs to be truly unique for all objects since it’s used as a has
 An items collection can also be provided on creation:
 
 ```ruby
-mb = MemStore.new(nil, { ... }) # to use Object.hash as key
-mb = MemStore.new(:id, { ... }) # to use custom key
+store = MemStore.new(nil, { ... }) # to use Object.hash as key
+store = MemStore.new(:id, { ... }) # to use custom key
 ```
 
 The collection must be a hash that correctly maps the used key to each item.
@@ -71,15 +77,15 @@ They’re basically the same, but `ObjectStore` accesses items through `item.att
 `ObjectStore` is the default variant:
 
 ```ruby
-mb = MemStore.new
+store = MemStore.new
 # is equal to
-mb = MemStore::ObjectStore.new
+store = MemStore::ObjectStore.new
 ```
 
 `HashStore` needs to be created explicitly:
 
 ```ruby
-mb = MemStore::HashStore.new
+store = MemStore::HashStore.new
 ```
 
 If no key attribute is specified, `HashStore` will also use `Object#hash`.
@@ -89,32 +95,32 @@ If no key attribute is specified, `HashStore` will also use `Object#hash`.
 `items` provides direct access to the internal items hash.
 
 ```ruby
-mb.items
+store.items
 # => {}
-mb.items = { 1 => a, 2 => b, 3 => c }
+store.items = { 1 => a, 2 => b, 3 => c }
 # => { 1 => a, 2 => b, 3 => c }
 ```
 
 `insert` adds one or multiple items and returns the data store itself:
 
 ```ruby
-mb.insert(a, b, c)
-# => mb
+store.insert(a, b, c)
+# => store
 ```
 
 Since it returns the data store, items can be added right after instantiation:
 
 ```ruby
-mb = MemStore.new.insert(a, b, c)
-# => mb
+store = MemStore.new.insert(a, b, c)
+# => store
 ```
 
 MemStore also supports the shovel operator `<<` for adding items.  
 Only one item can be added at a time but it’s chainable:
 
 ```ruby
-mb << a << b << c
-# => mb
+store << a << b << c
+# => store
 ```
 
 ### Retrieving Items
@@ -122,7 +128,7 @@ mb << a << b << c
 `size` returns the current number of items:
 
 ```ruby
-mb.size
+store.size
 # => 3
 ```
 
@@ -131,18 +137,18 @@ If a single key is given, a single item will be returned.
 If multiple keys are given, an array of items will be returned with `nil` when there is no item for a key.
 
 ```ruby
-mb[1]
+store[1]
 # => a
-mb[1, 2, 3]
+store[1, 2, 3]
 # => [a, b, c]
 ```
 
 Ranges are also supported and can even be combined with single keys:
 
 ```ruby
-mb[1..3]
+store[1..3]
 # => [a, b, c]
-mb[1..3, 6]
+store[1..3, 6]
 # => [a, b, c, f]
 ```
 
@@ -155,25 +161,25 @@ If one item is given, it is deleted and returned.
 If multiple items are given, they are deleted and returned as an array.
 
 ```ruby
-mb.delete_item(a)
+store.delete_item(a)
 # => a
-mb.delete_items(b, c, d)
+store.delete_items(b, c, d)
 # => [b, c, d]
-mb.delete(e, f, g)
+store.delete(e, f, g)
 # => [e, f, g]
 ```
 
 This is considered the default use case and therefore also available as `delete`.
 
 `delete_keys` (or `delete_key`) deletes items by key and returns them.  
-Again, one or multiple items can be deleted at a time and even ranges are handled.
+Again, one or multiple items can be deleted at a time and even ranges are accepted.
 
 ```ruby
-mb.delete_key(1)
+store.delete_key(1)
 # => a
-mb.delete_keys(2, 3, 4)
+store.delete_keys(2, 3, 4)
 # => [b, c, d]
-mb.delete_keys(5..7, 9)
+store.delete_keys(5..7, 9)
 # => [e, f, g, i]
 ```
 
@@ -221,10 +227,10 @@ The hash maps attributes names to conditions that should be tested.
 Conditions are evaluated using the `===` operator and can be virtually anything:
 
 ```ruby
-mb.find(name: "Fred", age: 25)
-mb.find(name: /red/i, age: 10..30)
-mb.find(child: MyClass)
-mb.find(child: -> child { child.valid? })
+store.find(name: "Fred", age: 25)
+store.find(name: /red/i, age: 10..30)
+store.find(child: MyClass)
+store.find(child: -> child { child.valid? })
 ```
 
 Additional types can be used in conditions by supporting the `===` operator. For example:
@@ -236,20 +242,20 @@ class Array
 	end
 end
 
-mb.find age: [23, 25, 27]
+store.find age: [23, 25, 27]
 ```
 
 The block is invoked with every item and can do more complex tests.  
 Its return value is interpreted as a boolean value:
 
 ```ruby
-mb.find { |item| item.age - item.child.age > 20 }
+store.find { |item| item.age - item.child.age > 20 }
 ```
 
 In addition to the evaluation logic, the arrays returned by all variants of `find` can be merged:
 
 ```ruby
-mb.find(...) | mb.find(...) | mb.find(...)
+store.find(...) | store.find(...) | store.find(...)
 ```
 
 Note that the pipe operator `|` already eliminates duplicates:
@@ -263,28 +269,43 @@ Note that the pipe operator `|` already eliminates duplicates:
 
 ### Serialization
 
-#### Binary
+MemStore support various ways of de-/serializing the data store.
 
-The data store can easily be serialized and restored in binary format:
+- `ObjectStore` supports binary format.
+- `HashStore` supports binary format, hash, [YAML](http://yaml.org/), [JSON](http://www.json.org/) and [MessagePack](http://msgpack.org/).
+
+**Important:** When file IO or deserialization fails, all variants of `from_*` return `nil`.
+
+The following style ensures that there will be a (correctly configured) data store:
 
 ```ruby
-mb.to_file("datastore.bin")
-# => number of bytes written
-MemStore.from_file("datastore.bin")
-# => instance of ObjectStore or HashStore
+store = MemStore.from_file(file) || MemStore::HashStore(key, items)
 ```
 
-MemStore will automatically restore the correct class (`ObjectStore`/`HashStore`), key and items.
+#### Binary
+
+Both `ObjectStore` and `HashStore` can easily be serialized to and from binary format:
+
+```ruby
+store.to_binary
+# => binary string
+store.to_file(file)
+# => number of bytes written
+MemStore.from_binary(binary)
+# => instance of ObjectStore or HashStore or nil
+MemStore.from_file(file)
+# => instance of ObjectStore or HashStore or nil
+```
 
 #### Hash
 
 `HashStore` can be converted to and from a hash:
 
 ```ruby
-h = mb.to_hash
+store.to_hash
 # => { key: ..., items: { ... } }
-MemStore::HashStore.from_hash(h)
-# => instance of HashStore
+MemStore::HashStore.from_hash(hash)
+# => instance of HashStore or nil
 ```
 
 #### YAML
@@ -294,14 +315,14 @@ MemStore::HashStore.from_hash(h)
 ```ruby
 require "memstore/yaml" # requires "yaml"
 
-mb.to_yaml
+store.to_yaml
 # => YAML string
-mb.to_yaml_file(file)
+store.to_yaml_file(file)
 # => number of bytes written
 MemStore::HashStore.from_yaml(yaml)
-# => instance of HashStore
+# => instance of HashStore or nil
 MemStore::HashStore.from_yaml_file(file)
-# => instance of HashStore
+# => instance of HashStore or nil
 ```
 
 De/serialization is seamless since YAML can handle symbols and non-string keys (i.e. Psych converts them correctly).
@@ -313,34 +334,34 @@ De/serialization is seamless since YAML can handle symbols and non-string keys (
 ```ruby
 require "memstore/json" # requires "json"
 
-mb.to_json
+store.to_json
 # => JSON string
-mb.to_json_file(file)
+store.to_json_file(file)
 # => number of bytes written
 MemStore::HashStore.from_json(json)
-# => instance of HashStore
+# => instance of HashStore or nil
 MemStore::HashStore.from_json_file(file)
-# => instance of HashStore
+# => instance of HashStore or nil
 ```
 
 **Important:** Symbols will be converted to strings and JSON only allows string keys.
 
 ```ruby
-mb = MemStore::HashStore.new(:id)
-mb << { id: 1 }
-mb.to_hash
+store = MemStore::HashStore.new(:id)
+store << { id: 1 }
+store.to_hash
 # => { :key => :id, :items => { 1 => { :id => 1 } } }
-mb = MemStore::HashStore.from_json(mb.to_json)
-mb.to_hash
+store = MemStore::HashStore.from_json(store.to_json)
+store.to_hash
 # => { :key => "id", :items => { "1" => { "id" => 1 } } }
 ```
 
 The following style ensures consistent access before and after serialization:
 
 ```ruby
-mb = MemStore::HashStore.new("id")
-mb << { "id" => "1" }
-mb["1"]
+store = MemStore::HashStore.new("id")
+store << { "id" => "1" }
+store["1"]
 # => { "id" => "1" }
 ```
 
@@ -351,41 +372,47 @@ mb["1"]
 ```ruby
 require "memstore/msgpack" # requires "msgpack"
 
-mb.to_msgpack
+store.to_msgpack
 # => MessagePack binary format
-mb.to_msgpack_file(file)
+store.to_msgpack_file(file)
 # => number of bytes written
 MemStore::HashStore.from_msgpack(msgpack)
-# => instance of HashStore
+# => instance of HashStore or nil
 MemStore::HashStore.from_msgpack_file(file)
-# => instance of HashStore
+# => instance of HashStore or nil
 ```
 
 **Important:** Symbols will be converted to strings but non-string keys are allowed.
 
 ```ruby
-mb = MemStore::HashStore.new(:id)
-mb << { id: 1 }
-mb.to_hash
+store = MemStore::HashStore.new(:id)
+store << { id: 1 }
+store.to_hash
 # => { :key => :id, :items => { 1 => { :id => 1 } } }
-mb = MemStore::HashStore.from_msgpack(mb.to_msgpack)
-mb.to_hash
+store = MemStore::HashStore.from_msgpack(store.to_msgpack)
+store.to_hash
 # => { :key => "id", :items => { 1 => { "id" => 1 } } }
 ```
 
 The following style ensures consistent access before and after serialization:
 
 ```ruby
-mb = MemStore::HashStore.new("id")
-mb << { "id" => 1 }
-mb[1]
+store = MemStore::HashStore.new("id")
+store << { "id" => 1 }
+store[1]
 # => { "id" => 1 }
 ```
 
 ## Contributing
 
-1. Fork it
-2. Create your feature branch: `git checkout -b my-new-feature`
-3. Commit your changes: `git commit -am 'Add some feature'`
-4. Push to the branch: `git push origin my-new-feature`
-5. Create new Pull Request
+1. Fork it on [GitHub](https://github.com/sklppr/memstore).
+2. Create a feature branch containing your changes:
+
+    ```sh
+    $ git checkout -b feature/my-new-feature
+    # code, code, code
+    $ git commit -am "Add some feature"
+    $ git push origin feature/my-new-feature
+    ```
+
+3. Create a Pull Request on [GitHub](https://github.com/sklppr/memstore).
