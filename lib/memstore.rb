@@ -7,11 +7,11 @@ module MemStore
   end
 
   def self.from_binary(binary)
-    begin Marshal.load(binary) rescue nil end
+    ObjectStore.from_binary(binary)
   end
 
   def self.from_file(file)
-    begin self.from_binary(IO.read(file)) rescue nil end
+    ObjectStore.from_file(file)
   end
 
   class ObjectStore
@@ -101,6 +101,14 @@ module MemStore
 
     def first_none(conditions={}, &block)
       all.detect { |item| instance_exec(item, conditions, block, &FIND_NONE) }
+    end
+
+    def self.from_binary(binary)
+      begin Marshal.load(binary) rescue nil end
+    end
+
+    def self.from_file(file)
+      begin self.from_binary(IO.read(file)) rescue nil end
     end
 
     def to_binary

@@ -48,17 +48,30 @@ describe MemStore::ObjectStore do
   it "can be converted to and from binary" do
     o = Dummy.new("custom key")
     store = MemStore::ObjectStore.new(:id).insert(o)
-    restored = MemStore.from_binary(store.to_binary)
+    restored = MemStore::ObjectStore.from_binary(store.to_binary)
     restored.must_be_instance_of MemStore::ObjectStore
     restored.items.must_equal store.items
     restored.instance_variable_get(:@key).must_equal :id
   end
 
+  it "returns nil when conversion from binary fails" do
+    MemStore::ObjectStore.from_binary(nil).must_equal nil
+  end
+
   it "can be serialized to and deserialized from a binary file" do
     tmp = Tempfile.new("memstore")
-    MemStore::ObjectStore.new.to_file tmp
-    MemStore.from_file(tmp).must_be_instance_of MemStore::ObjectStore
+    o = Dummy.new("custom key")
+    store = MemStore::ObjectStore.new(:id).insert(o)
+    store.to_file(tmp)
+    restored = MemStore::ObjectStore.from_file(tmp)
+    restored.must_be_instance_of MemStore::ObjectStore
+    restored.items.must_equal store.items
+    restored.instance_variable_get(:@key).must_equal :id
     tmp.unlink
+  end
+
+  it "returns nil when deserialization from binary file fails" do
+    MemStore::ObjectStore.from_file("does_not_exist").must_equal nil
   end
 
 end
@@ -84,9 +97,8 @@ describe MemStore::HashStore do
   end
 
   it "can be converted to and from binary" do
-    store = MemStore::HashStore.new(:id)
-    10.times { |i| store << { id: i } }
-    restored = MemStore.from_binary(store.to_binary)
+    store = MemStore::HashStore.new(:id).insert({ id: "custom key" })
+    restored = MemStore::HashStore.from_binary(store.to_binary)
     restored.must_be_instance_of MemStore::HashStore
     restored.items.must_equal store.items
     restored.instance_variable_get(:@key).must_equal :id
@@ -94,8 +106,12 @@ describe MemStore::HashStore do
 
   it "can be serialized to and deserialized from a binary file" do
     tmp = Tempfile.new("memstore")
-    MemStore::HashStore.new.to_file tmp
-    MemStore.from_file(tmp).must_be_instance_of MemStore::HashStore
+    store = MemStore::HashStore.new(:id).insert({ id: "custom key" })
+    store.to_file(tmp)
+    restored = MemStore::HashStore.from_file(tmp)
+    restored.must_be_instance_of MemStore::HashStore
+    restored.items.must_equal store.items
+    restored.instance_variable_get(:@key).must_equal :id
     tmp.unlink
   end
 
@@ -155,21 +171,6 @@ describe MemStore do
   it "deletes multiple items by key using a Range and returns them as an array" do
     @store.delete_keys(3..6).must_equal [3.0, 4.0, 5.0, 6.0]
     @store.all.must_equal [0.0, 1.0, 2.0, 7.0, 8.0, 9.0]
-  end
-
-  it "can be serialized to and deserialized from a binary file" do
-    tmp = Tempfile.new("memstore")
-    @store.to_file tmp
-    MemStore.from_file(tmp).items.must_equal @store.items
-    tmp.unlink
-  end
-
-  it "returns nil when conversion from binary fails" do
-    MemStore.from_binary(nil).must_equal nil
-  end
-
-  it "returns nil when deserialization from binary file fails" do
-    MemStore.from_file("does_not_exist").must_equal nil
   end
 
 end
