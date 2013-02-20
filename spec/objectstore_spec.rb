@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 require "minitest/autorun"
 require "tempfile"
 require "memstore"
@@ -77,6 +79,7 @@ describe MemStore::ObjectStore do
 
   it "returns nil when conversion from binary fails" do
     MemStore::ObjectStore.from_binary(nil).must_equal nil
+    MemStore::ObjectStore.from_binary(Marshal.dump(Object.new)).must_equal nil
   end
 
   it "can be serialized to and deserialized from a binary file" do

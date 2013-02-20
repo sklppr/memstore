@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 require "msgpack"
 
 module MemStore
@@ -13,11 +15,11 @@ module MemStore
     end
 
     def self.from_msgpack(msgpack)
-      begin self.from_hash(MessagePack.unpack(msgpack)) rescue nil end
+      self.from_hash(MessagePack.unpack(msgpack)) rescue nil
     end
     
     def self.from_msgpack_file(file)
-      begin self.from_msgpack(IO.read(file)) rescue nil end
+      self.from_msgpack(IO.read(file)) rescue nil
     end
 
     def self.with_msgpack_file(file, key=nil, items={}, &block)

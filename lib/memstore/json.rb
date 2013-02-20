@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 require "json"
 
 module MemStore
@@ -13,11 +15,11 @@ module MemStore
     end
 
     def self.from_json(json)
-      begin self.from_hash(JSON.parse(json)) rescue nil end
+      self.from_hash(JSON.parse(json)) rescue nil
     end
     
     def self.from_json_file(file)
-      begin self.from_json(IO.read(file)) rescue nil end
+      self.from_json(IO.read(file)) rescue nil
     end
 
     def self.with_json_file(file, key=nil, items={}, &block)

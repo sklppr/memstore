@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 require "minitest/autorun"
 require "tempfile"
 require "memstore"
@@ -24,6 +26,11 @@ describe MemStore::HashStore do
     restored.items.must_equal @store.items
     restored.instance_variable_get(:@key).must_equal @key
     tmp.unlink
+  end
+
+  it "returns nil when conversion from JSON fails" do
+    MemStore::HashStore.from_json(nil).must_equal nil
+    MemStore::HashStore.from_json(Marshal.dump(Object.new)).must_equal nil
   end
 
   it "supports concurrent access to a single JSON file" do
