@@ -29,9 +29,11 @@ module MemStore
     end
     alias_method :<<, :insert
     
-    def size
+    def length
       @items.length
     end
+    alias_method :size, :length
+    alias_method :count, :length
 
     def [](*keys)
       return @items[keys.first] if keys.length == 1 && !keys.first.is_a?(Range)
@@ -101,6 +103,27 @@ module MemStore
 
     def first_none(conditions={}, &block)
       all.detect { |item| instance_exec(item, conditions, block, &FIND_NONE) }
+    end
+
+    def count_all(conditions={}, &block)
+      all.count { |item| instance_exec(item, conditions, block, &FIND_ALL) }
+    end
+    alias_method :count, :count_all
+
+    def count_any(conditions={}, &block)
+      all.count { |item| instance_exec(item, conditions, block, &FIND_ANY) }
+    end
+
+    def count_one(conditions={}, &block)
+      all.count { |item| instance_exec(item, conditions, block, &FIND_ONE) }
+    end
+
+    def count_not_all(conditions={}, &block)
+      all.count { |item| !instance_exec(item, conditions, block, &FIND_ALL) }
+    end
+
+    def count_none(conditions={}, &block)
+      all.count { |item| instance_exec(item, conditions, block, &FIND_NONE) }
     end
 
     def self.from_binary(binary)

@@ -125,10 +125,10 @@ store << a << b << c
 
 ### Retrieving Items
 
-`size` returns the current number of items:
+`length` (or `size`) returns the current number of items:
 
 ```ruby
-store.size
+store.length
 # => 3
 ```
 
@@ -187,21 +187,27 @@ store.delete_keys(5..7, 9)
 
 The following methods are available to query the data store:
 
-- `find_all` (`find`)
+- `find_all` (also available as `find`)
 - `find_any`
 - `find_one`
 - `find_not_all`
 - `find_none`
-- `first_all` (`first`)
+- `first_all` (also available as `first`)
 - `first_any`
 - `first_one`
 - `first_not_all`
 - `first_none`
+- `count_all` (also available as `count`)
+- `count_any`
+- `count_one`
+- `count_not_all`
+- `count_none`
 
 The first part indicates what is returned:
 
 - `find_*` returns all matches.
 - `first_*` returns the first match.
+- `count_*` returns the number of matches.
 
 The second part indicates how conditions are evaluated:
 
@@ -213,13 +219,11 @@ The second part indicates how conditions are evaluated:
 
 In other words:
 
-- `all` means `condition && condition && ...`
-- `any` means `condition || condition || ...`
-- `one` means `condition ^ condition ^ ...` (XOR)
-- `not all` means `!(condition && condition && ...)` or `!condition || !condition || ...`
-- `none` means `!(condition || condition || ...)` or `!condition && !condition && ...`
-
-For convenience, `find` is aliased to `find_all` and `first` to `first_all`.
+- `all` means `condition && condition && ...`.
+- `any` means `condition || condition || ...`.
+- `one` means `condition ^ condition ^ ...` (XOR).
+- `not all` means `!(condition && condition && ...)` or `!condition || !condition || ...`.
+- `none` means `!(condition || condition || ...)` or `!condition && !condition && ...`.
 
 All variants take a `conditions` hash and an optional block.
 
@@ -242,17 +246,17 @@ class Array
 	end
 end
 
-store.find age: [23, 25, 27]
+store.find(age: [23, 25, 27])
 ```
 
-The block is invoked with every item and can do more complex tests.  
-Its return value is interpreted as a boolean value:
+The block is invoked with the item *after* the conditions are evaluated. It should return a boolean value:
 
 ```ruby
-store.find { |item| item.age - item.child.age > 20 }
+store.find(age: 25) { |item| item.age - item.child.age > 20 }
+# is evaluated as (item.age == 25) && (item.age - item.child.age > 20)
 ```
 
-In addition to the evaluation logic, the arrays returned by all variants of `find` can be merged:
+In addition to the evaluation logic, the arrays returned by all variants of `find_*` can be merged:
 
 ```ruby
 store.find(...) | store.find(...) | store.find(...)
@@ -263,8 +267,6 @@ Note that the pipe operator `|` already eliminates duplicates:
 ```ruby
 [a, b, c] | [c, d, e]
 # => [a, b, c, d, e]
-# which is equal to
-([a, b, c] + [c, d, e]).uniq
 ```
 
 ### Serialization
