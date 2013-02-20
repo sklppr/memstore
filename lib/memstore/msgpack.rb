@@ -20,6 +20,10 @@ module MemStore
       begin self.from_msgpack(IO.read(file)) rescue nil end
     end
 
+    def self.with_msgpack_file(file, key=nil, items={}, &block)
+      self.run_with_file(:from_msgpack_file, :to_msgpack_file, file, key, items, &block)
+    end
+
   end
 
 end

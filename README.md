@@ -40,6 +40,7 @@ $ gem install memstore
   - [YAML](#yaml)
   - [JSON](#json)
   - [MessagePack](#messagepack)
+  - [Concurrent Access](#concurrent-access)
 
 ### Basics
 
@@ -404,6 +405,27 @@ store << { "id" => 1 }
 store[1]
 # => { "id" => 1 }
 ```
+
+#### Concurrent Access
+
+To support concurrent access, e.g. when multiple threads or processes read and write the same data store file, there’s a `with_file` equivalent of `from_file` and `to_file`.
+
+`with_file` takes a file (name) and a block. It then obtains an exclusive lock on that file, restores a data store from it or creates a new one, invokes the block with the data store and finally saves the data store back to the file. Optionally, key and/or items can be specified for when the data store is created instead of restored.
+
+```ruby
+MemStore.with_file(file, key, items) do |store|
+  # create, read, update, delete
+end
+```
+
+`MemStore.with_file` is a shortcut to `MemStore::ObjectStore.with_file`.
+
+`HashStore` offers a locking version of all its serialization methods:
+
+- `with_file` by default,
+- `with_yaml_file` when `memstore/yaml` is included,
+- `with_json_file` when `memstore/json` is included,
+- `with_msgpack_file` when `memstore/msgpack` is included.
 
 ## Contributing
 

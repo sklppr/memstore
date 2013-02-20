@@ -20,6 +20,10 @@ module MemStore
       begin self.from_json(IO.read(file)) rescue nil end
     end
 
+    def self.with_json_file(file, key=nil, items={}, &block)
+      self.run_with_file(:from_json_file, :to_json_file, file, key, items, &block)
+    end
+
   end
 
 end
