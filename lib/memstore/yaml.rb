@@ -9,15 +9,15 @@ module MemStore
     end
     
     def to_yaml_file(file)
-      IO.write file, self.to_yaml
+      IO.write(file, self.to_yaml)
     end
 
     def self.from_yaml(yaml)
-      self.from_hash YAML.load(yaml)
+      begin self.from_hash(YAML.load(yaml)) rescue nil end
     end
     
     def self.from_yaml_file(file)
-      self.from_yaml IO.read(file)
+      begin self.from_yaml(IO.read(file)) rescue nil end
     end
 
   end

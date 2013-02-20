@@ -9,15 +9,15 @@ module MemStore
     end
     
     def to_msgpack_file(file)
-      IO.write file, self.to_msgpack
+      IO.write(file, self.to_msgpack)
     end
 
     def self.from_msgpack(msgpack)
-      self.from_hash MessagePack.unpack(msgpack)
+      begin self.from_hash(MessagePack.unpack(msgpack)) rescue nil end
     end
     
     def self.from_msgpack_file(file)
-      self.from_msgpack IO.read(file)
+      begin self.from_msgpack(IO.read(file)) rescue nil end
     end
 
   end
