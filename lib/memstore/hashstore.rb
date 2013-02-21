@@ -4,9 +4,13 @@ module MemStore
 
   class HashStore < ObjectStore
 
+    def self.from_binary(binary)
+      restored = Marshal.load(binary) rescue nil
+      if restored.instance_of?(HashStore) then restored else nil end
+    end
+
     def self.from_hash(hash)
       begin
-
         if hash.has_key?(:key) then key = hash[:key]
         elsif hash.has_key? "key" then key = hash["key"]
         else return nil end
@@ -16,7 +20,6 @@ module MemStore
         else return nil end
 
         if items.is_a?(Hash) then self.new(key, items) else self.new(key) end
-
       rescue
         nil
       end

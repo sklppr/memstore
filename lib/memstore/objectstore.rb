@@ -119,20 +119,20 @@ module MemStore
     end
     alias_method :delete_key, :delete_keys
 
-    # Restores a data store from binary format using Marshal::load.
+    # Restores a data store from binary format.
     #
-    # binary - Binary data containing a serialized instance of ObjectStore or HashStore.
+    # binary - Binary data containing a serialized instance of ObjectStore.
     #
     # Examples
     #
     #   store = ObjectStore.from_binary(IO.read(file))
     #
-    # Returns an instance of ObjectStore or HashStore or one of their subclasses
-    #   or nil if marshalling failed or marshalled object isn’t an ObjectStore or HashStore.
+    # Returns instance of ObjectStore
+    #   or nil if marshalling failed or marshalled object isn’t an ObjectStore.
     # Raises whatever Marshal::load raises.
     def self.from_binary(binary)
       restored = Marshal.load(binary) rescue nil
-      if restored.kind_of?(ObjectStore) || restored.kind_of?(HashStore) then restored else nil end
+      if restored.instance_of?(ObjectStore) then restored else nil end
     end
 
     # Restores a data store from a binary file.
@@ -143,14 +143,14 @@ module MemStore
     #
     #   store = ObjectStore.from_file(file)
     #
-    # Returns result of ::from_binary trying to deserialize the data store
+    # Returns instance of ObjectStore or nil (result of ::from_binary)
     #   or nil if file IO failed, e.g. because file doesn’t exist or isn’t readable.
     # Raises whatever IO::read or Marshal::load raise.
     def self.from_file(file)
       self.from_binary(IO.read(file)) rescue nil
     end
 
-    # Returns data store in binary format as converted by Marshal::dump.
+    # Returns data store in binary format.
     # Raises whatever Marshal::dump raises.
     def to_binary
       Marshal.dump(self)
@@ -190,7 +190,7 @@ module MemStore
     # Returns whatever the block returns.
     # Raises whatever File::open, IO::read, Marshal::load, Marshal::dump or IO::write raise.
     def self.with_file(file, key=nil, items={}, &block)
-      self.run_with_file(:from_file, :to_file, file, key, items, &block)
+      self.execute_with_file(:from_file, :to_file, file, key, items, &block)
     end
 
     private
@@ -234,7 +234,7 @@ module MemStore
     # 
     # Returns whatever the block returns.
     # Raises whatever File::open, IO::read, Marshal::load, Marshal::dump or IO::write raise.
-    def self.run_with_file(from_file_method, to_file_method, file, key=nil, items={}, &block)
+    def self.execute_with_file(from_file_method, to_file_method, file, key=nil, items={}, &block)
       File.open(file) do |file|
         file.flock(File::LOCK_EX)
         store = self.send(from_file_method, file) || self.new(key, items)
