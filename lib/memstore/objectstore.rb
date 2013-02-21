@@ -64,7 +64,10 @@ module MemStore
     #   store[1..3]
     #   store[1, 3..5, 7]
     #
-    # Returns one or multiple Objects.
+    # Returns an Object if a single key was given
+    #   or nil if no item with that key exists
+    #   or an Array of Objects when multiple keys were given
+    #   in which nil is placed wherever there isn’t an item with that key.
     def [](*keys)
       return @items[keys.first] if keys.length == 1 && !keys.first.is_a?(Range)
       keys.inject([]) do |items, key|
@@ -89,8 +92,10 @@ module MemStore
     #   store.delete(a)
     #   store.delete(a, b, c)
     #
-    # Returns all Objects that were removed from the data store.
-    # Raises NoMethodError when an item does’t respond to the key attribute method.
+    # Returns the Object that was removed if a single item was given
+    #   or nil if the item isn’t in the data store
+    #   or an Array of Objects that were removed when multiple items were given
+    #   in which nil is placed wherever that item isn’t in the data store.
     def delete_items(*items)
       return @items.delete(key(items.first)) if items.length == 1
       items.collect { |item| @items.delete(key(item)) }
@@ -110,7 +115,10 @@ module MemStore
     #   store.delete_keys(1..3)
     #   store.delete_keys(1, 3..5, 7)
     #
-    # Returns all Objects that were removed from the data store.
+    # Returns the Object that was removed if a single key was given
+    #   or nil if no item with that key exists
+    #   or an Array of Objects that were removed when multiple keys were given
+    #   in which nil is placed wherever there isn’t an item with that key.
     def delete_keys(*keys)
       return @items.delete(keys.first) if keys.length == 1 && !keys.first.is_a?(Range)
       keys.inject([]) do |items, key|
