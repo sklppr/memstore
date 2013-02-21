@@ -23,7 +23,7 @@ module MemStore
     end
 
     def self.with_msgpack_file(file, key=nil, items={}, &block)
-      self.run_with_file(:from_msgpack_file, :to_msgpack_file, file, key, items, &block)
+      self.execute_with_file(:from_msgpack_file, :to_msgpack_file, file, key, items, &block)
     end
 
   end

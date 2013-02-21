@@ -82,6 +82,10 @@ describe MemStore::ObjectStore do
     MemStore::ObjectStore.from_binary(Marshal.dump(Object.new)).must_equal nil
   end
 
+  it "returns nil when marshalled object isn’t instance of ObjectStore" do
+    MemStore::ObjectStore.from_binary(MemStore::HashStore.new.to_binary).must_equal nil
+  end
+
   it "can be serialized to and deserialized from a binary file" do
     tmp = Tempfile.new("memstore")
     @store.to_file(tmp)
