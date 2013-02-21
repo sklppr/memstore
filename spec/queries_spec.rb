@@ -1,7 +1,7 @@
 require "minitest/autorun"
 require "tempfile"
 
-class Dummy
+class Dummy # :nodoc:
 
   attr_accessor :id, :name, :child
   
