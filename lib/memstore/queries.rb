@@ -129,14 +129,14 @@ module MemStore
 
     # Internal: Evaluates conditions using XOR, i.e. condition ^ condition ^ condition ... [^ block]
     FIND_ONE = Proc.new do |item, conditions, block|
-        conditions.one? { |attribute, condition| condition === attr(item, attribute) } ||
+        conditions.one? { |attribute, condition| condition === attr(item, attribute) } ^
           if block then !!block.call(item) else false end
       end
 
     # Internal: Evaluates condition using AND NOT, i.e. !condition && !condition && ... [&& !block]
     FIND_NONE = Proc.new do |item, conditions, block|
         conditions.none? { |attribute, condition| condition === attr(item, attribute) } &&
-          if block then !!block.call(item) else true end
+          if block then !!!block.call(item) else true end
       end
 
   end
