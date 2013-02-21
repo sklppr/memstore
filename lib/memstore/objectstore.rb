@@ -2,8 +2,9 @@
 
 module MemStore
 
-  # An ObjectStore accesses item attributes through item#attribute.
   class ObjectStore
+
+    # ObjectStore accesses item attributes through item#attribute.
 
     # Initializes an ObjectStore.
     #
@@ -28,7 +29,7 @@ module MemStore
     attr_accessor :items
 
     # Inserts one or more items into the data store, can be chained.
-    # Also available as #<<, which only allows for one item at a time.
+    # The aliased shovel operator #<< only allows adding one item at a time.
     #
     # items - One or more Objects that respond to the method specified as key attribute.
     #
@@ -39,6 +40,7 @@ module MemStore
     #   store << a << b << c
     #
     # Returns the data store itself to enable chaining.
+    #
     # Raises NoMethodError when an item does’t respond to the key attribute method.
     def insert(*items)
       items.each { |item| @items[key(item)] = item }
@@ -46,7 +48,7 @@ module MemStore
     end
     alias_method :<<, :insert
     
-    # Returns total number of items in the data store. Also available as #size.
+    # Returns total number of items in the data store.
     def length
       @items.length
     end
@@ -64,10 +66,9 @@ module MemStore
     #   store[1..3]
     #   store[1, 3..5, 7]
     #
-    # Returns an Object if a single key was given
-    #   or nil if no item with that key exists
-    #   or an Array of Objects when multiple keys were given
-    #   in which nil is placed wherever there isn’t an item with that key.
+    # Returns an Object if a single key was given and the item was found
+    #   or nil if a single key was given and no item with that key exists
+    #   or an Array if multiple keys were given, with nil where no item with that key exists
     def [](*keys)
       return @items[keys.first] if keys.length == 1 && !keys.first.is_a?(Range)
       keys.inject([]) do |items, key|
@@ -81,7 +82,7 @@ module MemStore
       @items.values
     end
 
-    # Deletes one or more items by reference. Also available as #delete_item and #delete.
+    # Deletes one or more items by reference.
     #
     # items - One or more Objects that respond to the method specified as key attribute.
     #
@@ -92,10 +93,9 @@ module MemStore
     #   store.delete(a)
     #   store.delete(a, b, c)
     #
-    # Returns the Object that was removed if a single item was given
-    #   or nil if the item isn’t in the data store
-    #   or an Array of Objects that were removed when multiple items were given
-    #   in which nil is placed wherever that item isn’t in the data store.
+    # Returns the Object that was removed if a single item was given and found
+    #   or nil if a single item was given and not found
+    #   or an Array if multiple keys were given, with nil where an item wasn’t found.
     def delete_items(*items)
       return @items.delete(key(items.first)) if items.length == 1
       items.collect { |item| @items.delete(key(item)) }
@@ -103,7 +103,7 @@ module MemStore
     alias_method :delete_item, :delete_items
     alias_method :delete, :delete_items
 
-    # Deletes one or more items by key. Also available as #delete_key.
+    # Deletes one or more items by key.
     #
     # keys - One or more Objects or Ranges that are keys of items.
     #        For a Range, all items with keys in that range are deleted.
@@ -115,10 +115,9 @@ module MemStore
     #   store.delete_keys(1..3)
     #   store.delete_keys(1, 3..5, 7)
     #
-    # Returns the Object that was removed if a single key was given
-    #   or nil if no item with that key exists
-    #   or an Array of Objects that were removed when multiple keys were given
-    #   in which nil is placed wherever there isn’t an item with that key.
+    # Returns the Object that was removed if a single key was given and the item was found
+    #   or nil if a single key was given and no item with that key exists
+    #   or an Array if multiple keys were given, with nil where no item with that key exists.
     def delete_keys(*keys)
       return @items.delete(keys.first) if keys.length == 1 && !keys.first.is_a?(Range)
       keys.inject([]) do |items, key|
@@ -129,6 +128,7 @@ module MemStore
     alias_method :delete_key, :delete_keys
 
     # Returns data store in binary format.
+    #
     # Raises whatever Marshal::dump raises.
     def to_binary
       Marshal.dump(self)
@@ -139,7 +139,8 @@ module MemStore
     # file - IO stream of file name as String.
     #
     # Returns number of bytes that were written to the file.
-    # Raises whatever IO::write raises.
+    #
+    # Raises whatever IO::write or Marshal::dump raise.
     def to_file(file)
       IO.write(file, self.to_binary)
     end
@@ -148,12 +149,9 @@ module MemStore
     #
     # binary - Binary data containing a serialized instance of ObjectStore.
     #
-    # Examples
-    #
-    #   store = ObjectStore.from_binary(IO.read(file))
-    #
-    # Returns instance of ObjectStore
+    # Returns instance of ObjectStore if deserialization succeeded
     #   or nil if marshalling failed or marshalled object isn’t an ObjectStore.
+    #
     # Raises whatever Marshal::load raises.
     def self.from_binary(binary)
       restored = Marshal.load(binary) rescue nil
@@ -164,12 +162,9 @@ module MemStore
     #
     # file - IO stream or file name as String.
     #
-    # Examples
+    # Returns instance of ObjectStore or nil as returned by ::from_binary
+    #   or nil if file doesn’t exist or isn’t readable.
     #
-    #   store = ObjectStore.from_file(file)
-    #
-    # Returns instance of ObjectStore or nil (result of ::from_binary)
-    #   or nil if file IO failed, e.g. because file doesn’t exist or isn’t readable.
     # Raises whatever IO::read or Marshal::load raise.
     def self.from_file(file)
       self.from_binary(IO.read(file)) rescue nil
@@ -197,6 +192,7 @@ module MemStore
     #   end
     # 
     # Returns whatever the block returns.
+    #
     # Raises whatever File::open, IO::read, Marshal::load, Marshal::dump or IO::write raise.
     def self.with_file(file, key=nil, items={}, &block)
       self.execute_with_file(:from_file, :to_file, file, key, items, &block)
@@ -209,6 +205,7 @@ module MemStore
     # item - Object that responds to the attribute.
     #
     # Returns result of calling the key attribute method on the item.
+    #
     # Raises NoMethodError when item does’t respond to the key attribute method.
     def key(item)
       item.send(@key)
@@ -220,6 +217,7 @@ module MemStore
     # attribute - Symbol or String naming the attribute.
     #
     # Returns result of calling the attribute method on the item.
+    #
     # Raises NoMethodError when item does’t respond to the attribute method.
     def attr(item, attribute)
       item.send(attribute)
@@ -242,6 +240,7 @@ module MemStore
     # Yields the restored or newly created data store.
     # 
     # Returns whatever the block returns.
+    #
     # Raises whatever File::open, IO::read, Marshal::load, Marshal::dump or IO::write raise.
     def self.execute_with_file(from_file_method, to_file_method, file, key=nil, items={}, &block)
       File.open(file) do |file|

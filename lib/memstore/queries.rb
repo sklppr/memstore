@@ -4,6 +4,8 @@ module MemStore
 
   class ObjectStore
 
+    # Methods for searching and counting items based on conditions.
+
     # All methods have the following signature:
     #
     # conditions - Hash mapping attributes to conditions.
@@ -17,7 +19,6 @@ module MemStore
 
     ### find ###
 
-    # Also available as #find.
     # Returns an Array of items that fulfill all conditions.
     def find_all(conditions={}, &block)
       all.select { |item| instance_exec(item, conditions, block, &FIND_ALL) }
@@ -46,7 +47,6 @@ module MemStore
 
     ### first ###
 
-    # Also available as #first.
     # Returns the first item that fulfills all conditions.
     def first_all(conditions={}, &block)
       all.detect { |item| instance_exec(item, conditions, block, &FIND_ALL) }
@@ -76,7 +76,6 @@ module MemStore
 
     ### count ###
 
-    # Also available as #count.
     # Returns the number of items that fulfill all conditions.
     def count_all(conditions={}, &block)
       all.count { |item| instance_exec(item, conditions, block, &FIND_ALL) }
@@ -112,8 +111,7 @@ module MemStore
     # conditions - Hash of conditions to be evaluated.
     # block - Optional block that can test the item after the conditions are evaluated.
     #
-    # Returns a bool indicating whether the item was a match
-    #   for the given conditions and matching logic.
+    # Returns a bool indicating whether the item passed the conditions and matching logic.
 
     # Internal: Evaluates conditions using AND, i.e. condition && condition && ... [&& block]
     FIND_ALL = Proc.new do |item, conditions, block|

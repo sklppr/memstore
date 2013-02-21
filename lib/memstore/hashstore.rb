@@ -2,8 +2,9 @@
 
 module MemStore
 
-  # A HashStore accesses item attributes through item[attribute].
   class HashStore < ObjectStore
+
+    # HashStore accesses item attributes through item[attribute].
 
     # Initializes a HashStore.
     #
@@ -32,12 +33,9 @@ module MemStore
     #
     # binary - Binary data containing a serialized instance of HashStore.
     #
-    # Examples
-    #
-    #   store = HashStore.from_binary(IO.read(file))
-    #
-    # Returns instance of HashStore
+    # Returns instance of HashStore if deserialization succeeded
     #   or nil if marshalling failed or marshalled object isn’t a HashStore.
+    #
     # Raises whatever Marshal::load raises.
     def self.from_binary(binary)
       restored = Marshal.load(binary) rescue nil
@@ -49,11 +47,7 @@ module MemStore
     # hash - Hash that contains a serialized HashStore.
     #        It must have the fields :key/"key" and :items/"items".
     #
-    # Examples
-    #
-    #   store = HashStore.from_hash(hash)
-    #
-    # Returns instance of HashStore
+    # Returns instance of HashStore if deserialization succeeded
     #   or nil if hash isn’t a Hash or doesn’t have the required fields.
     def self.from_hash(hash)
       begin
@@ -78,6 +72,7 @@ module MemStore
     # item - Object that responds to the [] operator (e.g. Hash).
     #
     # Returns result of calling the [] operator with the key attribute on the item.
+    #
     # Raises NoMethodError when item does’t respond to the key attribute method.
     def key(item)
       if @key.nil? then item.hash else item[@key] end
@@ -89,6 +84,7 @@ module MemStore
     # attribute - Object used as the attribute key in the item.
     #
     # Returns result of calling the [] operator with the attribute on the item.
+    #
     # Raises NoMethodError when item does’t respond to the [] operator.
     def attr(item, attribute)
       item[attribute]
