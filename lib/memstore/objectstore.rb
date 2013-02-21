@@ -2,11 +2,12 @@
 
 module MemStore
 
+  # An ObjectStore accesses item attributes through item#attribute.
   class ObjectStore
 
     # Initializes an ObjectStore.
     #
-    # key   - Optional Symbol or String naming the method to obtain item’s key attribute (default: nil).
+    # key   - Optional Symbol or String naming the method to obtain an item’s key attribute (default: nil).
     #         When no key is specified, Object#hash will be used for uniquely identifying items.
     # items - Optional Hash of items to initialize the data store with (default: empty Hash).
     #
@@ -119,6 +120,22 @@ module MemStore
     end
     alias_method :delete_key, :delete_keys
 
+    # Returns data store in binary format.
+    # Raises whatever Marshal::dump raises.
+    def to_binary
+      Marshal.dump(self)
+    end
+
+    # Writes data store to a file in binary format.
+    #
+    # file - IO stream of file name as String.
+    #
+    # Returns number of bytes that were written to the file.
+    # Raises whatever IO::write raises.
+    def to_file(file)
+      IO.write(file, self.to_binary)
+    end
+
     # Restores a data store from binary format.
     #
     # binary - Binary data containing a serialized instance of ObjectStore.
@@ -148,22 +165,6 @@ module MemStore
     # Raises whatever IO::read or Marshal::load raise.
     def self.from_file(file)
       self.from_binary(IO.read(file)) rescue nil
-    end
-
-    # Returns data store in binary format.
-    # Raises whatever Marshal::dump raises.
-    def to_binary
-      Marshal.dump(self)
-    end
-
-    # Writes data store to a file in binary format.
-    #
-    # file - IO stream of file name as String.
-    #
-    # Returns number of bytes that were written to the file.
-    # Raises whatever IO::write raises.
-    def to_file(file)
-      IO.write(file, self.to_binary)
     end
 
     # Executes a given block while keeping an exclusive lock on a file.
