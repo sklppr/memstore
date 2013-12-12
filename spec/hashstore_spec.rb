@@ -13,7 +13,7 @@ describe MemStore::HashStore do
 
   it "indexes items by Object#hash by default" do
     h = {}
-    store = MemStore::HashStore.new.insert(h)
+    store = MemStore::HashStore.new.add(h)
     store.items[h.hash].must_equal h
   end
 

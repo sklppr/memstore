@@ -17,7 +17,7 @@ describe MemStore::ObjectStore do
 
   it "indexes items by Object#hash by default" do
     o = Object.new
-    store = MemStore::ObjectStore.new.insert(o)
+    store = MemStore::ObjectStore.new.add(o)
     store.items[o.hash].must_equal o
   end
 
@@ -26,7 +26,7 @@ describe MemStore::ObjectStore do
   end
 
   it "returns the overall number of items" do
-    @store.length.must_equal 10
+    @store.size.must_equal 10
   end
 
   it "returns a single item by itself" do

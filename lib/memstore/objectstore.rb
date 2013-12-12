@@ -39,17 +39,16 @@ module MemStore
     # Returns the data store itself to enable chaining.
     #
     # Raises NoMethodError when an item does’t respond to the key attribute method.
-    def insert(*items)
+    def add(*items)
       items.each { |item| @items[key(item)] = item }
       self
     end
-    alias_method :<<, :insert
+    alias_method :<<, :add
     
     # Returns total number of items in the data store.
-    def length
+    def size
       @items.length
     end
-    alias_method :size, :length
 
     # Retrieves one or more items by key.
     #
@@ -66,13 +65,14 @@ module MemStore
     # Returns an Object if a single key was given and the item was found
     #   or nil if a single key was given and no item with that key exists
     #   or an Array if multiple keys were given, with nil where no item with that key exists
-    def [](*keys)
+    def get(*keys)
       return @items[keys.first] if keys.length == 1 && !keys.first.is_a?(Range)
       keys.inject([]) do |items, key|
         if key.is_a?(Range) then key.inject(items) { |i, k| i << @items[k] }
         else items << @items[key] end
       end
     end
+    alias_method :[], :get
 
     # Returns all items as an Array.
     def all
