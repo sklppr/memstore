@@ -86,17 +86,17 @@ store.items = { 1 => a, 2 => b, 3 => c }
 # => { 1 => a, 2 => b, 3 => c }
 ```
 
-`insert` adds one or multiple items and returns the data store itself:
+`add` adds one or multiple items and returns the data store itself:
 
 ```ruby
-store.insert(a, b, c)
+store.add(a, b, c)
 # => store
 ```
 
 Since it returns the data store, items can be added right after instantiation:
 
 ```ruby
-store = MemStore.new.insert(a, b, c)
+store = MemStore.new.add(a, b, c)
 # => store
 ```
 
@@ -110,16 +110,25 @@ store << a << b << c
 
 #### Retrieving Items
 
-`length` (or `size`) returns the current number of items:
+`size` returns the current number of items:
 
 ```ruby
-store.length
+store.size
 # => 3
 ```
 
-The bracket operator `[]` is used to look up items by their key.  
+`get` is used to look up items by their key.  
 If a single key is given, a single item will be returned.  
 If multiple keys are given, an array of items will be returned with `nil` when there is no item for a key.
+
+```ruby
+store.get(1)
+# => a
+store.get(1, 2, 3)
+# => [a, b, c]
+```
+
+This can also be done using the bracket operator `[]`:
 
 ```ruby
 store[1]
