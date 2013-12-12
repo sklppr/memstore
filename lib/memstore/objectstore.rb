@@ -10,19 +10,16 @@ module MemStore
     #
     # key   - Optional Symbol or String naming the method to obtain an item’s key attribute (default: nil).
     #         When no key is specified, Object#hash will be used for uniquely identifying items.
-    # items - Optional Hash of items to initialize the data store with (default: empty Hash).
     #
     # Examples
     #
     #   store = ObjectStore.new
     #   store = ObjectStore.new(:id)
-    #   store = ObjectStore.new(nil, { a.hash => a, b.hash => b, c.hash => c })
-    #   store = ObjectStore.new(:id, { 1 => a, 2 => b, 3 => c })
     #
     # Returns initialized ObjectStore.
-    def initialize(key=nil, items={})
+    def initialize(key=nil)
       @key = key || :hash
-      @items = items
+      @items = {}
     end
 
     # Provides access to internal items collection (which is simply a Hash).

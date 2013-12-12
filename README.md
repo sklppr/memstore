@@ -20,7 +20,7 @@ And then execute:
 $ bundle
 ```
 
-Or install it yourself as:
+Or install it yourself:
 
 ```sh
 $ gem install memstore
@@ -52,15 +52,6 @@ store = MemStore.new(:id)
 ```
 
 The property needs to be truly unique for all objects since it’s used as a hash key internally.
-
-An items collection can also be provided on creation:
-
-```ruby
-store = MemStore.new(nil, { ... }) # to use Object.hash as key
-store = MemStore.new(:id, { ... }) # to use custom key
-```
-
-The collection must be a hash that correctly maps the used key to each item.
 
 #### Objects vs. Hashes
 

@@ -11,12 +11,6 @@ describe MemStore::ObjectStore do
     10.times { |i| @store << i.to_f }
   end
 
-  it "can be instantiated with items" do
-    h = { a: 1, b: 2, c: 3 }
-    store = MemStore::ObjectStore.new(nil, h)
-    store.items.must_equal h
-  end
-
   it "is the default when instantiating MemStore" do
     MemStore.new.must_be_instance_of MemStore::ObjectStore
   end
