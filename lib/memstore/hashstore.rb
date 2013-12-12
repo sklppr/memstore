@@ -10,18 +10,16 @@ module MemStore
     #
     # key   - Optional Object used as an item’s key attribute (default: nil).
     #         When no key is specified, Object#hash will be used for uniquely identifying items.
-    # items - Optional Hash of items to initialize the data store with (default: empty Hash).
     #
     # Examples
     #
     #   store = HashStore.new
     #   store = HashStore.new(:id)
-    #   store = HashStore.new(nil, { a.hash => a, b.hash => b, c.hash => c })
-    #   store = HashStore.new(:id, { 1 => a, 2 => b, 3 => c })
     #
-    # Returns initialized ObjectStore.
-    def initialize(key=nil, items={})
-      @key, @items = key, items
+    # Returns initialized HashStore.
+    def initialize(key=nil)
+      @key = key
+      @items = {}
     end
 
     private

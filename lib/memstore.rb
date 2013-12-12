@@ -8,8 +8,8 @@ require "memstore/queries"
 module MemStore
 
   # Shortcut to ObjectStore::new
-  def self.new(key=nil, items={})
-    ObjectStore.new(key, items)
+  def self.new(key=nil)
+    ObjectStore.new(key)
   end
 
 end

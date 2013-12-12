@@ -11,12 +11,6 @@ describe MemStore::HashStore do
     10.times { |i| @store << { id: i } }
   end
 
-  it "can be instantiated with items" do
-    h = { a: 1, b: 2, c: 3 }
-    store = MemStore::HashStore.new(nil, h)
-    store.items.must_equal h
-  end
-
   it "indexes items by Object#hash by default" do
     h = {}
     store = MemStore::HashStore.new.insert(h)
