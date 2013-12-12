@@ -24,47 +24,6 @@ module MemStore
       @key, @items = key, items
     end
 
-    # Returns data store as a Hash with the fields :key and :items.
-    def to_hash
-      { key: @key, items: @items }
-    end
-
-    # Restores a data store from binary format.
-    #
-    # binary - Binary data containing a serialized instance of HashStore.
-    #
-    # Returns instance of HashStore if deserialization succeeded
-    #   or nil if marshalling failed or marshalled object isn’t a HashStore.
-    #
-    # Raises whatever Marshal::load raises.
-    def self.from_binary(binary)
-      restored = Marshal.load(binary) rescue nil
-      if restored.instance_of?(HashStore) then restored else nil end
-    end
-
-    # Restores a data store from a Hash.
-    #
-    # hash - Hash that contains a serialized HashStore.
-    #        It must have the fields :key/"key" and :items/"items".
-    #
-    # Returns instance of HashStore if deserialization succeeded
-    #   or nil if hash isn’t a Hash or doesn’t have the required fields.
-    def self.from_hash(hash)
-      begin
-        if hash.has_key?(:key) then key = hash[:key]
-        elsif hash.has_key? "key" then key = hash["key"]
-        else return nil end
-
-        if hash.has_key?(:items) then items = hash[:items]
-        elsif hash.has_key? "items" then items = hash["items"]
-        else return nil end
-
-        if items.is_a?(Hash) then self.new(key, items) else self.new(key) end
-      rescue
-        nil
-      end
-    end
-
     private
 
     # Internal: Obtains the key attribute of an item.
