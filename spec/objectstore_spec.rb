@@ -70,48 +70,4 @@ describe MemStore::ObjectStore do
     @store.all.must_equal [0.0, 1.0, 2.0, 7.0, 8.0, 9.0]
   end
 
-  it "can be converted to and from binary" do
-    restored = MemStore::ObjectStore.from_binary(@store.to_binary)
-    restored.must_be_instance_of MemStore::ObjectStore
-    restored.items.must_equal @store.items
-    restored.instance_variable_get(:@key).must_equal @store.instance_variable_get(:@key)
-  end
-
-  it "returns nil when conversion from binary fails" do
-    MemStore::ObjectStore.from_binary(nil).must_equal nil
-    MemStore::ObjectStore.from_binary(Marshal.dump(Object.new)).must_equal nil
-  end
-
-  it "returns nil when marshalled object isn’t instance of ObjectStore" do
-    MemStore::ObjectStore.from_binary(MemStore::HashStore.new.to_binary).must_equal nil
-  end
-
-  it "can be serialized to and deserialized from a binary file" do
-    tmp = Tempfile.new("memstore")
-    @store.to_file(tmp)
-    restored = MemStore::ObjectStore.from_file(tmp)
-    restored.must_be_instance_of MemStore::ObjectStore
-    restored.items.must_equal @store.items
-    restored.instance_variable_get(:@key).must_equal @store.instance_variable_get(:@key)
-    tmp.unlink
-  end
-
-  it "returns nil when deserialization from binary file fails" do
-    MemStore::ObjectStore.from_file("does_not_exist").must_equal nil
-  end
-
-  it "supports concurrent access to a single binary file" do
-    tmp = Tempfile.new("memstore")
-    fork do
-      MemStore.with_file(tmp, :to_i) { |store| store.insert(1.0, 3.0) }
-    end
-    fork do
-      MemStore.with_file(tmp, :to_i) { |store| store.insert(2.0, 4.0) }
-    end
-    sleep 0.1
-    restored = MemStore.from_file(tmp)
-    restored.items.must_equal({1=>1.0, 2=>2.0, 3=>3.0, 4=>4.0})
-    tmp.unlink
-  end
-
 end

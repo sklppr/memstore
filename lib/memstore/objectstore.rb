@@ -127,77 +127,6 @@ module MemStore
     end
     alias_method :delete_key, :delete_keys
 
-    # Returns data store in binary format.
-    #
-    # Raises whatever Marshal::dump raises.
-    def to_binary
-      Marshal.dump(self)
-    end
-
-    # Writes data store to a file in binary format.
-    #
-    # file - IO stream of file name as String.
-    #
-    # Returns number of bytes that were written to the file.
-    #
-    # Raises whatever IO::write or Marshal::dump raise.
-    def to_file(file)
-      IO.write(file, self.to_binary)
-    end
-
-    # Restores a data store from binary format.
-    #
-    # binary - Binary data containing a serialized instance of ObjectStore.
-    #
-    # Returns instance of ObjectStore if deserialization succeeded
-    #   or nil if marshalling failed or marshalled object isn’t an ObjectStore.
-    #
-    # Raises whatever Marshal::load raises.
-    def self.from_binary(binary)
-      restored = Marshal.load(binary) rescue nil
-      if restored.instance_of?(ObjectStore) then restored else nil end
-    end
-
-    # Restores a data store from a binary file.
-    #
-    # file - IO stream or file name as String.
-    #
-    # Returns instance of ObjectStore or nil as returned by ::from_binary
-    #   or nil if file doesn’t exist or isn’t readable.
-    #
-    # Raises whatever IO::read or Marshal::load raise.
-    def self.from_file(file)
-      self.from_binary(IO.read(file)) rescue nil
-    end
-
-    # Executes a given block while keeping an exclusive lock on a file.
-    # Allows to use the same file for persistence from multiple threads/processes.
-    # Tries to deserialize a data store from the file using ::from_file.
-    # If that fails, a new one will be created using the supplied key and items.
-    # Writes data store back to file using #to_file after block returns.
-    #
-    # file - IO stream or file name as String.
-    # key - Optional key attribute (Symbol or String) to use in ::new (default: nil).
-    # items - Optional items Hash to use in ::new (default: empty Hash).
-    # block - Block that will be called after a data store was restored or created.
-    #
-    # Yields the restored or newly created data store.
-    #
-    # Examples
-    #
-    #   size_after_changes = ObjectStore.with_file(file, :id) do |store|
-    #     store.delete(a, b, c, d, e)
-    #     store.insert(f, g, h)
-    #     store.size
-    #   end
-    # 
-    # Returns whatever the block returns.
-    #
-    # Raises whatever File::open, IO::read, Marshal::load, Marshal::dump or IO::write raise.
-    def self.with_file(file, key=nil, items={}, &block)
-      self.execute_with_file(:from_file, :to_file, file, key, items, &block)
-    end
-
     private
 
     # Internal: Obtains the key attribute of an item.
@@ -221,36 +150,6 @@ module MemStore
     # Raises NoMethodError when item does’t respond to the attribute method.
     def attr(item, attribute)
       item.send(attribute)
-    end
-
-    # Internal: Used to implement with_file and variants for different formats/subclasses.
-    # Takes required method names, can therefore be used by any subclass.
-    # Executes a given block while keeping an exclusive lock on a file.
-    # Tries to deserialize a data store from the file using from_file_method.
-    # If that fails, a new one will be created using the supplied key and items.
-    # Writes data store back to file using to_file_method after block returns.
-    #
-    # from_file_method - Name of class method (Symbol or String) to deserialize data store from file.
-    # to_file_method - Name of instance method (Symbol or String) to serialize data store to file.
-    # file - IO stream or file name as String.
-    # key - Optional key attribute (Symbol or String) to use in ::new (default: nil).
-    # items - Optional items Hash to use in ::new (default: empty Hash).
-    # block - Block that will be called after a data store was restored or created.
-    #
-    # Yields the restored or newly created data store.
-    # 
-    # Returns whatever the block returns.
-    #
-    # Raises whatever File::open, IO::read, Marshal::load, Marshal::dump or IO::write raise.
-    def self.execute_with_file(from_file_method, to_file_method, file, key=nil, items={}, &block)
-      File.open(file) do |file|
-        file.flock(File::LOCK_EX)
-        store = self.send(from_file_method, file) || self.new(key, items)
-        result = block.call(store)
-        store.send(to_file_method, file)
-        file.flock(File::LOCK_UN)
-        result
-      end
     end
 
   end
