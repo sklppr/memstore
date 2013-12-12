@@ -41,7 +41,7 @@ describe MemStore::ObjectStore do
     @store[0..9].must_equal @store.all
   end
 
-  it "deletes a single item by reference and returns it by itself" do
+  it "deletes a single item by reference and returns it" do
     @store.delete_item(3.0).must_equal 3.0
   end
 
@@ -56,11 +56,6 @@ describe MemStore::ObjectStore do
 
   it "deletes multiple items by key and returns them as an array" do
     @store.delete_keys(3, 4, 5, 6).must_equal [3.0, 4.0, 5.0, 6.0]
-    @store.all.must_equal [0.0, 1.0, 2.0, 7.0, 8.0, 9.0]
-  end
-
-  it "deletes multiple items by key using a Range and returns them as an array" do
-    @store.delete_keys(3..6).must_equal [3.0, 4.0, 5.0, 6.0]
     @store.all.must_equal [0.0, 1.0, 2.0, 7.0, 8.0, 9.0]
   end
 

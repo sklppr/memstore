@@ -79,6 +79,20 @@ module MemStore
       @items.values
     end
 
+    # Deletes one item by reference.
+    #
+    # item - Object that responds to the method specified as key attribute.
+    #
+    # Examples
+    #
+    #   store.delete_item(a)
+    #
+    # Return the Object that was deleted from the data store
+    #   or nil if the item didn’t exist in the data store.
+    def delete_item(item)
+      @items.delete(key(item))
+    end
+
     # Deletes one or more items by reference.
     #
     # items - One or more Objects that respond to the method specified as key attribute.
@@ -90,15 +104,25 @@ module MemStore
     #   store.delete(a)
     #   store.delete(a, b, c)
     #
-    # Returns the Object that was removed if a single item was given and found
-    #   or nil if a single item was given and not found
-    #   or an Array if multiple keys were given, with nil where an item wasn’t found.
+    # Returns an Array of Objects that were deleted from the data store
+    #   with nil where an item didn’t exist in the data store.
     def delete_items(*items)
-      return @items.delete(key(items.first)) if items.length == 1
       items.collect { |item| @items.delete(key(item)) }
     end
-    alias_method :delete_item, :delete_items
-    alias_method :delete, :delete_items
+
+    # Deletes one item by key.
+    #
+    # key - Object that is key of an item.
+    #
+    # Examples
+    #
+    #   store.delete_key(1)
+    #
+    # Return the Object that was deleted from the data store
+    #   or nil if the item didn’t exist in the data store.
+    def delete_key(key)
+      @items.delete(key)
+    end
 
     # Deletes one or more items by key.
     #
@@ -107,22 +131,13 @@ module MemStore
     #
     # Examples
     #
-    #   store.delete_key(1)
     #   store.delete_keys(1, 2, 3)
-    #   store.delete_keys(1..3)
-    #   store.delete_keys(1, 3..5, 7)
     #
-    # Returns the Object that was removed if a single key was given and the item was found
-    #   or nil if a single key was given and no item with that key exists
-    #   or an Array if multiple keys were given, with nil where no item with that key exists.
+    # Returns an Array of Objects that were deleted from the data store
+    #   with nil where an item didn’t exist in the data store.
     def delete_keys(*keys)
-      return @items.delete(keys.first) if keys.length == 1 && !keys.first.is_a?(Range)
-      keys.inject([]) do |items, key|
-        if key.is_a?(Range) then key.inject(items) { |i, k| i << @items.delete(k) }
-        else items << @items.delete(key) end
-      end
+      keys.collect { |key| @items.delete(key) }
     end
-    alias_method :delete_key, :delete_keys
 
     private
 

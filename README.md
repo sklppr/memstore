@@ -28,14 +28,12 @@ $ gem install memstore
 
 ## Usage
 
-- [Basics](#basics)
-  - [Objects vs. Hashes](#objects-vs-hashes)
-  - [Adding Items](#adding-items)
-  - [Retrieving Items](#retrieving-items)
-  - [Deleting Items](#deleting-items)
-- [Search Queries](#search-queries)
-
-### Basics
+- [Objects vs. Hashes](#objects-vs-hashes)
+- [Adding Items](#adding-items)
+- [Getting Items](#getting-items)
+- [Finding Items](#finding-items)
+- [Deleting Items](#deleting-items)
+- [Counting Items](#counting-items)
 
 Creating a data store is utterly simple:
 
@@ -53,7 +51,7 @@ store = MemStore.new(:id)
 
 The property needs to be truly unique for all objects since it’s used as a hash key internally.
 
-#### Objects vs. Hashes
+### Objects vs. Hashes
 
 MemStore comes in two flavors: `ObjectStore` and `HashStore`.
 
@@ -75,16 +73,7 @@ store = MemStore::HashStore.new
 
 If no key attribute is specified, `HashStore` will also use `Object#hash`.
 
-#### Adding Items
-
-`items` provides direct access to the internal items hash.
-
-```ruby
-store.items
-# => {}
-store.items = { 1 => a, 2 => b, 3 => c }
-# => { 1 => a, 2 => b, 3 => c }
-```
+### Adding Items
 
 `add` adds one or multiple items and returns the data store itself:
 
@@ -108,18 +97,20 @@ store << a << b << c
 # => store
 ```
 
-#### Retrieving Items
+### Getting Items
 
-`size` returns the current number of items:
+`items` provides direct access to the internal items hash.
 
 ```ruby
-store.size
-# => 3
+store.items
+# => {}
+store.items = { 1 => a, 2 => b, 3 => c }
+# => { 1 => a, 2 => b, 3 => c }
 ```
 
 `get` is used to look up items by their key.  
 If a single key is given, a single item will be returned.  
-If multiple keys are given, an array of items will be returned with `nil` when there is no item for a key.
+If multiple keys are given, an array of items will be returned with `nil` where there is no item for a key.
 
 ```ruby
 store.get(1)
@@ -146,38 +137,7 @@ store[1..3, 6]
 # => [a, b, c, f]
 ```
 
-#### Deleting Items
-
-`delete_items` (or `delete_item`) deletes items by reference and returns them.  
-This is considered the default use case and therefore also available as `delete`.
-
-If one item is given, it is deleted and returned.  
-If multiple items are given, they are deleted and returned as an array.
-
-```ruby
-store.delete_item(a)
-# => a
-store.delete_items(b, c, d)
-# => [b, c, d]
-store.delete(e, f, g)
-# => [e, f, g]
-```
-
-This is considered the default use case and therefore also available as `delete`.
-
-`delete_keys` (or `delete_key`) deletes items by key and returns them.  
-Again, one or multiple items can be deleted at a time and even ranges are accepted.
-
-```ruby
-store.delete_key(1)
-# => a
-store.delete_keys(2, 3, 4)
-# => [b, c, d]
-store.delete_keys(5..7, 9)
-# => [e, f, g, i]
-```
-
-### Search Queries
+### Finding Items
 
 The following methods are available to query the data store:
 
@@ -191,11 +151,6 @@ The following methods are available to query the data store:
 - `first_one`
 - `first_not_all`
 - `first_none`
-- `count_all` (alias `count`)
-- `count_any`
-- `count_one`
-- `count_not_all`
-- `count_none`
 
 The first part indicates what is returned:
 
@@ -235,9 +190,9 @@ Additional types can be used in conditions by supporting the `===` operator. For
 
 ```ruby
 class Array
-	def ===(obj)
-		self.include?(obj)
-	end
+  def ===(obj)
+    self.include?(obj)
+  end
 end
 
 store.find(age: [23, 25, 27])
@@ -262,6 +217,52 @@ Note that the pipe operator `|` already eliminates duplicates:
 [a, b, c] | [c, d, e]
 # => [a, b, c, d, e]
 ```
+
+### Deleting Items
+
+Items can be deleted directly by key or by reference.
+
+`delete_item` deletes a single items and returns it or nil if the item didn’t exist.  
+`delete_items` deletes multiple items and returns an array of them with `nil` where an item didn’t exist.  
+`delete_key` and `delete_keys` work similarly, but take keys instead of items.
+
+```ruby
+store.delete_item(a)
+# => a
+store.delete_items(b, c, d)
+# => [b, c, d]
+store.delete_key(5)
+# => e
+store.delete_keys(6, 7, 8)
+# => [f, g, h]
+```
+
+Similar to the `find_*` and `count_*` methods, the following methods are available to delete items:
+
+- `delete_all` (alias `delete`)
+- `delete_any`
+- `delete_one`
+- `delete_not_all`
+- `delete_none`
+
+All methods return an array of items that were deleted from the data store.
+
+### Counting Items
+
+`size` returns the current number of items:
+
+```ruby
+store.size
+# => 3
+```
+
+Similar to the `find_*` methods, the following methods are available to count items:
+
+- `count_all` (alias `count`)
+- `count_any`
+- `count_one`
+- `count_not_all`
+- `count_none`
 
 ## Contributing
 
