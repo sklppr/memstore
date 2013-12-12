@@ -8,15 +8,8 @@ module MemStore
 
     # Initializes an ObjectStore.
     #
-    # key   - Optional Symbol or String naming the method to obtain an item’s key attribute (default: nil).
-    #         When no key is specified, Object#hash will be used for uniquely identifying items.
-    #
-    # Examples
-    #
-    #   store = ObjectStore.new
-    #   # => store
-    #   store = ObjectStore.new(:id)
-    #   # => store
+    # key - Optional Symbol or String naming the method to obtain an item’s key attribute (default: nil).
+    #       When no key is specified, Object#hash will be used for uniquely identifying items.
     #
     # Returns initialized ObjectStore.
     def initialize(key=nil)
@@ -31,11 +24,6 @@ module MemStore
     #
     # item - Object to add.
     #
-    # Examples
-    #
-    #   store << a
-    #   # => store
-    #
     # Returns the data store itself.
     #
     # Raises NoMethodError when an item does’t respond to the key attribute method.
@@ -47,13 +35,6 @@ module MemStore
     # Adds one or more items to the data store.
     #
     # items - One or more Objects that respond to the method specified as key attribute.
-    #
-    # Examples
-    #
-    #   store.add(a)
-    #   # => store
-    #   store.add(a, b, c)
-    #   # => store
     #
     # Returns the data store itself.
     #
@@ -72,11 +53,6 @@ module MemStore
     #
     # key - Object that is key of an item.
     #
-    # Examples
-    #
-    #  store[1]
-    #  # => a
-    #
     # Returns item if it exists, otherwise nil.
     def [](key)
       @items[key]
@@ -85,11 +61,6 @@ module MemStore
     # Retrieves one or more items by key.
     #
     # keys - One or more Objects that are keys of items.
-    #
-    # Examples
-    #
-    #   store.get(1, 2, 3)
-    #   # => [a, b, c]
     #
     # Returns an Array of items with nil where no item with that key exists.
     def get(*keys)
@@ -105,11 +76,6 @@ module MemStore
     #
     # item - Object that responds to the method specified as key attribute.
     #
-    # Examples
-    #
-    #   store.delete_item(a)
-    #   # => a
-    #
     # Return the Object that was deleted from the data store
     #   or nil if the item didn’t exist in the data store.
     def delete_item(item)
@@ -119,11 +85,6 @@ module MemStore
     # Deletes one or more items by reference.
     #
     # items - One or more Objects that respond to the method specified as key attribute.
-    #
-    # Examples
-    #
-    #   store.delete_items(a, b, c)
-    #   # => [a, b, c]
     #
     # Returns an Array of Objects that were deleted from the data store
     #   with nil where an item didn’t exist in the data store.
@@ -135,11 +96,6 @@ module MemStore
     #
     # key - Object that is key of an item.
     #
-    # Examples
-    #
-    #   store.delete_key(1)
-    #   # => a
-    #
     # Return the Object that was deleted from the data store
     #   or nil if the item didn’t exist in the data store.
     def delete_key(key)
@@ -149,11 +105,6 @@ module MemStore
     # Deletes one or more items by key.
     #
     # keys - One or more Objects that are keys of items.
-    #
-    # Examples
-    #
-    #   store.delete_keys(1, 2, 3)
-    #   # => [a, b, c]
     #
     # Returns an Array of Objects that were deleted from the data store
     #   with nil where an item didn’t exist in the data store.
