@@ -33,12 +33,12 @@ describe MemStore::ObjectStore do
     @store[3].must_equal 3.0
   end
 
-  it "returns multiple items as an array" do
-    @store[3, 4, 5, 6].must_equal [3.0, 4.0, 5.0, 6.0]
+  it "returns a single item as an array" do
+    @store.get(3).must_equal [3.0]
   end
 
-  it "returns multiple items using a Range as an array" do
-    @store[0..9].must_equal @store.all
+  it "returns multiple items as an array" do
+    @store.get(3, 4, 5, 6).must_equal [3.0, 4.0, 5.0, 6.0]
   end
 
   it "deletes a single item by reference and returns it" do
