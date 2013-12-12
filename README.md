@@ -99,7 +99,7 @@ store << a << b << c
 
 ### Getting Items
 
-`items` provides direct access to the internal items hash.
+`items` provides direct read/write access to the internal items hash.
 
 ```ruby
 store.items
@@ -108,33 +108,21 @@ store.items = { 1 => a, 2 => b, 3 => c }
 # => { 1 => a, 2 => b, 3 => c }
 ```
 
-`get` is used to look up items by their key.  
-If a single key is given, a single item will be returned.  
-If multiple keys are given, an array of items will be returned with `nil` where there is no item for a key.
-
-```ruby
-store.get(1)
-# => a
-store.get(1, 2, 3)
-# => [a, b, c]
-```
-
-This can also be done using the bracket operator `[]`:
+Single items can be accessed by their key using the bracket operator `[]`:
 
 ```ruby
 store[1]
 # => a
-store[1, 2, 3]
-# => [a, b, c]
 ```
 
-Ranges are also supported and can even be combined with single keys:
+`get` is used to look up multiple items by their key.  
+It returns an array of items with `nil` where there is no item for a key.
 
 ```ruby
-store[1..3]
+store.get(1)
+# => [a]
+store.get(1, 2, 3)
 # => [a, b, c]
-store[1..3, 6]
-# => [a, b, c, f]
 ```
 
 ### Finding Items

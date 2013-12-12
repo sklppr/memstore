@@ -14,7 +14,9 @@ module MemStore
     # Examples
     #
     #   store = ObjectStore.new
+    #   # => store
     #   store = ObjectStore.new(:id)
+    #   # => store
     #
     # Returns initialized ObjectStore.
     def initialize(key=nil)
@@ -25,54 +27,74 @@ module MemStore
     # Provides access to internal items collection (which is simply a Hash).
     attr_accessor :items
 
-    # Inserts one or more items into the data store, can be chained.
-    # The aliased shovel operator #<< only allows adding one item at a time.
+    # Adds one item to the data store.
+    #
+    # item - Object to add.
+    #
+    # Examples
+    #
+    #   store << a
+    #   # => store
+    #
+    # Returns the data store itself.
+    #
+    # Raises NoMethodError when an item does’t respond to the key attribute method.
+    def <<(item)
+      @items[key(item)] = item
+      self
+    end
+
+    # Adds one or more items to the data store.
     #
     # items - One or more Objects that respond to the method specified as key attribute.
     #
     # Examples
     #
-    #   store.insert(a).insert(b).insert(c)
-    #   store.insert(a, b, c)
-    #   store << a << b << c
+    #   store.add(a)
+    #   # => store
+    #   store.add(a, b, c)
+    #   # => store
     #
-    # Returns the data store itself to enable chaining.
+    # Returns the data store itself.
     #
     # Raises NoMethodError when an item does’t respond to the key attribute method.
     def add(*items)
-      items.each { |item| @items[key(item)] = item }
+      items.each { |item| self << item }
       self
     end
-    alias_method :<<, :add
     
     # Returns total number of items in the data store.
     def size
       @items.length
     end
 
-    # Retrieves one or more items by key.
+    # Retrieves one item by key.
     #
-    # keys - One or more Objects or Ranges that are keys of items.
-    #        For a Range, all items with keys in that range are returned.
+    # key - Object that is key of an item.
     #
     # Examples
     #
-    #   store[1]
-    #   store[1, 2, 3]
-    #   store[1..3]
-    #   store[1, 3..5, 7]
+    #  store[1]
+    #  # => a
     #
-    # Returns an Object if a single key was given and the item was found
-    #   or nil if a single key was given and no item with that key exists
-    #   or an Array if multiple keys were given, with nil where no item with that key exists
-    def get(*keys)
-      return @items[keys.first] if keys.length == 1 && !keys.first.is_a?(Range)
-      keys.inject([]) do |items, key|
-        if key.is_a?(Range) then key.inject(items) { |i, k| i << @items[k] }
-        else items << @items[key] end
-      end
+    # Returns item if it exists, otherwise nil.
+    def [](key)
+      @items[key]
     end
-    alias_method :[], :get
+
+    # Retrieves one or more items by key.
+    #
+    # keys - One or more Objects that are keys of items.
+    #
+    # Examples
+    #
+    #   store.get(1, 2, 3)
+    #   # => [a, b, c]
+    #
+    # Returns an Array of items with nil where no item with that key exists.
+    def get(*keys)
+      keys.collect { |key| @items[key] }
+    end
 
     # Returns all items as an Array.
     def all
@@ -86,6 +108,7 @@ module MemStore
     # Examples
     #
     #   store.delete_item(a)
+    #   # => a
     #
     # Return the Object that was deleted from the data store
     #   or nil if the item didn’t exist in the data store.
@@ -99,10 +122,8 @@ module MemStore
     #
     # Examples
     #
-    #   store.delete_item(a)
     #   store.delete_items(a, b, c)
-    #   store.delete(a)
-    #   store.delete(a, b, c)
+    #   # => [a, b, c]
     #
     # Returns an Array of Objects that were deleted from the data store
     #   with nil where an item didn’t exist in the data store.
@@ -117,6 +138,7 @@ module MemStore
     # Examples
     #
     #   store.delete_key(1)
+    #   # => a
     #
     # Return the Object that was deleted from the data store
     #   or nil if the item didn’t exist in the data store.
@@ -126,12 +148,12 @@ module MemStore
 
     # Deletes one or more items by key.
     #
-    # keys - One or more Objects or Ranges that are keys of items.
-    #        For a Range, all items with keys in that range are deleted.
+    # keys - One or more Objects that are keys of items.
     #
     # Examples
     #
     #   store.delete_keys(1, 2, 3)
+    #   # => [a, b, c]
     #
     # Returns an Array of Objects that were deleted from the data store
     #   with nil where an item didn’t exist in the data store.
