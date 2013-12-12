@@ -21,86 +21,127 @@ module MemStore
 
     # Returns an Array of items that fulfill all conditions.
     def find_all(conditions={}, &block)
-      all.select { |item| instance_exec(item, conditions, block, &FIND_ALL) }
+      all.select { |item| instance_exec(item, conditions, block, &ALL) }
     end
     alias_method :find, :find_all
 
     # Returns an Array of items that fulfill at least one condition.
     def find_any(conditions={}, &block)
-      all.select { |item| instance_exec(item, conditions, block, &FIND_ANY) }
+      all.select { |item| instance_exec(item, conditions, block, &ANY) }
     end
 
     # Returns an Array of items that fulfill exactly one condition.
     def find_one(conditions={}, &block)
-      all.select { |item| instance_exec(item, conditions, block, &FIND_ONE) }
+      all.select { |item| instance_exec(item, conditions, block, &ONE) }
     end
 
     # Returns an Array of items that violate at least one condition.
     def find_not_all(conditions={}, &block)
-      all.reject { |item| instance_exec(item, conditions, block, &FIND_ALL) }
+      all.reject { |item| instance_exec(item, conditions, block, &ALL) }
     end
 
     # Returns an Array of items that violate all conditions.
     def find_none(conditions={}, &block)
-      all.select { |item| instance_exec(item, conditions, block, &FIND_NONE) }
+      all.select { |item| instance_exec(item, conditions, block, &NONE) }
     end
 
     ### first ###
 
     # Returns the first item that fulfills all conditions.
     def first_all(conditions={}, &block)
-      all.detect { |item| instance_exec(item, conditions, block, &FIND_ALL) }
+      all.detect { |item| instance_exec(item, conditions, block, &ALL) }
     end
     alias_method :first, :first_all
 
     # Returns the first item that fulfills at least one condition.
     def first_any(conditions={}, &block)
-      all.detect { |item| instance_exec(item, conditions, block, &FIND_ANY) }
+      all.detect { |item| instance_exec(item, conditions, block, &ANY) }
     end
 
     # Returns the first item that fulfills exactly one condition.
     def first_one(conditions={}, &block)
-      all.detect { |item| instance_exec(item, conditions, block, &FIND_ONE) }
+      all.detect { |item| instance_exec(item, conditions, block, &ONE) }
     end
 
-    # which is equivalent to: !condition || !condition || ... [|| !block]
     # Returns the first item that violates at least one condition.
     def first_not_all(conditions={}, &block)
-      all.detect { |item| !instance_exec(item, conditions, block, &FIND_ALL) }
+      all.detect { |item| !instance_exec(item, conditions, block, &ALL) }
     end
 
     # Returns the first item that violates all conditions.
     def first_none(conditions={}, &block)
-      all.detect { |item| instance_exec(item, conditions, block, &FIND_NONE) }
+      all.detect { |item| instance_exec(item, conditions, block, &NONE) }
     end
 
     ### count ###
 
     # Returns the number of items that fulfill all conditions.
     def count_all(conditions={}, &block)
-      all.count { |item| instance_exec(item, conditions, block, &FIND_ALL) }
+      all.count { |item| instance_exec(item, conditions, block, &ALL) }
     end
     alias_method :count, :count_all
 
     # Returns the number of items that fulfill at least one condition.
     def count_any(conditions={}, &block)
-      all.count { |item| instance_exec(item, conditions, block, &FIND_ANY) }
+      all.count { |item| instance_exec(item, conditions, block, &ANY) }
     end
 
     # Returns the number of items that fulfill exactly one condition.
     def count_one(conditions={}, &block)
-      all.count { |item| instance_exec(item, conditions, block, &FIND_ONE) }
+      all.count { |item| instance_exec(item, conditions, block, &ONE) }
     end
 
-    # which is equivalent to: !condition || !condition || ... [|| !block]
     # Returns the number of items that violate at least one condition.
     def count_not_all(conditions={}, &block)
-      all.count { |item| !instance_exec(item, conditions, block, &FIND_ALL) }
+      all.count { |item| !instance_exec(item, conditions, block, &ALL) }
     end
 
     # Returns the number of items that violate all conditions.
     def count_none(conditions={}, &block)
-      all.count { |item| instance_exec(item, conditions, block, &FIND_NONE) }
+      all.count { |item| instance_exec(item, conditions, block, &NONE) }
+    end
+
+    ### delete ###
+
+    # Deletes and returns items that fulfill all conditions.
+    def delete_all(conditions={}, &block)
+      @items.inject([]) do |items, (key, item)|
+        items << @items.delete(key) if instance_exec(item, conditions, block, &ALL)
+        items
+      end
+    end
+    alias_method :delete, :delete_all
+
+    # Deletes and returns items that fulfill at least one condition.
+    def delete_any(conditions={}, &block)
+      @items.inject([]) do |items, (key, item)|
+        items << @items.delete(key) if instance_exec(item, conditions, block, &ANY)
+        items
+      end
+    end
+
+    # Deletes and returns items that fulfill exactly one condition.
+    def delete_one(conditions={}, &block)
+      @items.inject([]) do |items, (key, item)|
+        items << @items.delete(key) if instance_exec(item, conditions, block, &ONE)
+        items
+      end
+    end
+
+    # Deletes and returns items that violate at least one condition.
+    def delete_not_all(conditions={}, &block)
+      @items.inject([]) do |items, (key, item)|
+        items << @items.delete(key) if !instance_exec(item, conditions, block, &ALL)
+        items
+      end
+    end
+
+    # Deletes and returns items that violate all conditions.
+    def delete_none(conditions={}, &block)
+      @items.inject([]) do |items, (key, item)|
+        items << @items.delete(key) if instance_exec(item, conditions, block, &NONE)
+        items
+      end
     end
 
     private
@@ -114,25 +155,25 @@ module MemStore
     # Returns a bool indicating whether the item passed the conditions and matching logic.
 
     # Internal: Evaluates conditions using AND, i.e. condition && condition && ... [&& block]
-    FIND_ALL = Proc.new do |item, conditions, block|
+    ALL = Proc.new do |item, conditions, block|
         conditions.all? { |attribute, condition| condition === attr(item, attribute) } &&
           if block then !!block.call(item) else true end
       end
   
     # Internal: Evaluates conditions using OR, i.e. condition || condition || ... [|| block]
-    FIND_ANY = Proc.new do |item, conditions, block|
+    ANY = Proc.new do |item, conditions, block|
         conditions.any? { |attribute, condition| condition === attr(item, attribute) } ||
           if block then !!block.call(item) else false end
       end
 
     # Internal: Evaluates conditions using XOR, i.e. condition ^ condition ^ condition ... [^ block]
-    FIND_ONE = Proc.new do |item, conditions, block|
+    ONE = Proc.new do |item, conditions, block|
         conditions.one? { |attribute, condition| condition === attr(item, attribute) } ^
           if block then !!block.call(item) else false end
       end
 
     # Internal: Evaluates condition using AND NOT, i.e. !condition && !condition && ... [&& !block]
-    FIND_NONE = Proc.new do |item, conditions, block|
+    NONE = Proc.new do |item, conditions, block|
         conditions.none? { |attribute, condition| condition === attr(item, attribute) } &&
           if block then !!!block.call(item) else true end
       end
