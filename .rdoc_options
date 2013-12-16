@@ -1,16 +1,19 @@
 --- !ruby/object:RDoc::Options
 encoding: UTF-8
+charset: UTF-8
 static_path: []
 rdoc_include:
 - .
-charset: UTF-8
-exclude: 
+exclude:
+- spec
+- Gemfile
+- Gemfile.lock
+- Rakefile
+- created.rid
+main_page: README.md
+markup: tomdoc
 hyperlink_all: false
 line_numbers: false
-main_page: 
-markup: tomdoc
 show_hash: false
-tab_width: 8
-title: 
+tab_width: 2
 visibility: :protected
-webcvs: 

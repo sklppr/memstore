@@ -2,38 +2,13 @@
 
 *A simple in-memory data store.*
 
-MemStore is a simple in-memory data store that supports adding, retrieving and deleting items as well as complex search queries and easy serialization.
+MemStore is a simple in-memory data store that supports complex search queries.
 
-It’s not in any way supposed to be a “real” database. However, it can replace a database in small applications or prototypes.
+It’s not in any way supposed to be a database. However, it can be used instead of database in small applications or prototypes.
 
-## Installation
+**Note: Ruby 2.0 is required.**
 
-Add this line to your application's Gemfile:
-
-```ruby
-gem "memstore"
-```
-
-And then execute:
-
-```sh
-$ bundle
-```
-
-Or install it yourself:
-
-```sh
-$ gem install memstore
-```
-
-## Usage
-
-- [Objects vs. Hashes](#objects-vs-hashes)
-- [Adding Items](#adding-items)
-- [Getting Items](#getting-items)
-- [Finding Items](#finding-items)
-- [Deleting Items](#deleting-items)
-- [Counting Items](#counting-items)
+## Initialization
 
 Creating a data store is utterly simple:
 
@@ -41,72 +16,102 @@ Creating a data store is utterly simple:
 store = MemStore.new
 ```
 
-By default, objects are indexed using `Object#hash`.
-
-If a different property should be used, it can be specified like this:
+If the store should contain items right away, they can be passed as an array:
 
 ```ruby
-store = MemStore.new(:id)
+store = MemStore.new(items: [a, b, c])
 ```
 
-The property needs to be truly unique for all objects since it’s used as a hash key internally.
+## Customization
 
-### Objects vs. Hashes
-
-MemStore comes in two flavors: `ObjectStore` and `HashStore`.
-
-They’re basically the same, but `ObjectStore` accesses items through `item.attribute` while `HashStore` accesses items through `item[attribute]`.
-
-`ObjectStore` is the default variant:
+The way the data store indexes items and accesses their attributes can be customized so that arbitrary data can be stored.
 
 ```ruby
+store = MemStore.new(key: ..., access: ...)
+```
+
+By default, MemStore will call `item.hash` to obtain a unique identifier.
+
+If something provided for `key`, it will be used as a parameter to the `access` method.  
+In most cases, this will be a Symbol or String:
+
+```ruby
+store = MemStore.new(key: :id)
+# store will try to access attribute :id
+store = MemStore.new(key: "id")
+# store will try to access attribute "id"
+```
+
+However, if a Proc or Method is provided, it will be called and passed the item:
+
+```ruby
+store = MemStore.new(key: -> item { ... })
+# or
+store = MemStore.new(key: Proc.new { |item| ... })
+# or
+def get_custom_key(item)
+  ...
+end
+store = MemStore.new(key: method(:get_custom_key))
+```
+
+By default, MemStore will access attributes as methods, i.e. using `item.send(attribute)`:
+
+```ruby
+store = MemStore.new(key: :id)
+# store will call item.id to obtain key
+```
+
+If something is provided for `access`, it will be used as a method identifier which will be called and passed the attribute:
+
+```ruby
+store = MemStore.new(key: :id, access: :get)
+# store will call item.get(:id) to obtain key
+```
+
+However, if a Proc or Method is provided, it will be called and passed the item and attribute:
+
+```ruby
+store = MemStore.new(access: -> item, attribute { ... })
+# or
+store = MemStore.new(access: Proc.new { |item, attribute| ... })
+# or
+def extract_attribute(item, attribute)
+  ...
+end
+store = MemStore.new(access: method(:extract_attribute))
+```
+
+Using these two options, a multitude of variants can be configured, e.g.:
+
+```ruby
+# Use item.hash and item.attribute
 store = MemStore.new
-# is equal to
-store = MemStore::ObjectStore.new
+# Use item.hash and item.get(attribute)
+store = MemStore.new(access: :get)
+# Store hashes: use item[attribute] and :id as key
+store = MemStore.new(access: :[], key: :id)
+# Use one method for all attributes but a special method for key
+store = MemStore.new(access: :get, key: -> item { item.key })
 ```
 
-`HashStore` needs to be created explicitly:
+## Adding Items
+
+Single items can be added using the shovel operator `<<`:
 
 ```ruby
-store = MemStore::HashStore.new
+store << a
+# => store
 ```
 
-If no key attribute is specified, `HashStore` will also use `Object#hash`.
-
-### Adding Items
-
-`add` adds one or multiple items and returns the data store itself:
+Multiple items can be added using `add`:
 
 ```ruby
 store.add(a, b, c)
 # => store
 ```
 
-Since it returns the data store, items can be added right after instantiation:
-
-```ruby
-store = MemStore.new.add(a, b, c)
-# => store
-```
-
-MemStore also supports the shovel operator `<<` for adding items.  
-Only one item can be added at a time but it’s chainable:
-
-```ruby
-store << a << b << c
-# => store
-```
-
-### Getting Items
-
-`items` provides direct read/write access to the internal items hash.
-
-```ruby
-store.items
-# => {}
-store.items = { 1 => a, 2 => b, 3 => c }
-# => { 1 => a, 2 => b, 3 => c }
-```
+## Getting Items
 
 Single items can be accessed by their key using the bracket operator `[]`:
 
@@ -115,8 +120,7 @@ store[1]
 # => a
 ```
 
-`get` is used to look up multiple items by their key.  
-It returns an array of items with `nil` where there is no item for a key.
+Multiple items can be retrieved using `get`, which always returns an array:
 
 ```ruby
 store.get(1)
@@ -125,7 +129,23 @@ store.get(1, 2, 3)
 # => [a, b, c]
 ```
 
-### Finding Items
+The array contains `nil` when there is no item for a key:
+
+```ruby
+store.get(1, -1, 3)
+# => [a, nil, c]
+```
+
+`items` provides direct read/write access to the internal items hash:
+
+```ruby
+store.items
+# => {}
+store.items = { 1 => a, 2 => b, 3 => c }
+# => { 1 => a, 2 => b, 3 => c }
+```
+
+## Finding Items
 
 The following methods are available to query the data store:
 
@@ -206,13 +226,13 @@ Note that the pipe operator `|` already eliminates duplicates:
 # => [a, b, c, d, e]
 ```
 
-### Deleting Items
+## Deleting Items
 
 Items can be deleted directly by key or by reference.
 
-`delete_item` deletes a single items and returns it or nil if the item didn’t exist.  
+`delete_item` deletes a single items and returns the item or nil if the item didn’t exist.  
 `delete_items` deletes multiple items and returns an array of them with `nil` where an item didn’t exist.  
-`delete_key` and `delete_keys` work similarly, but take keys instead of items.
+`delete_key` and `delete_keys` work similarly, except using keys instead of items.
 
 ```ruby
 store.delete_item(a)
@@ -235,9 +255,9 @@ Similar to the `find_*` and `count_*` methods, the following methods are availab
 
 All methods return an array of items that were deleted from the data store.
 
-### Counting Items
+## Counting Items
 
-`size` returns the current number of items:
+`size` returns the current number of items in the data store:
 
 ```ruby
 store.size
@@ -251,17 +271,3 @@ Similar to the `find_*` methods, the following methods are available to count it
 - `count_one`
 - `count_not_all`
 - `count_none`
-
-## Contributing
-
-1. Fork it on [GitHub](https://github.com/sklppr/memstore).
-2. Create a feature branch containing your changes:
-
-    ```sh
-    $ git checkout -b feature/my-new-feature
-    # code, code, code
-    $ git commit -am "Add some feature"
-    $ git push origin feature/my-new-feature
-    ```
-
-3. Create a Pull Request on [GitHub](https://github.com/sklppr/memstore).
