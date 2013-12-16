@@ -6,7 +6,7 @@ MemStore is a simple in-memory data store that supports complex search queries.
 
 It’s not in any way supposed to be a database. However, it can be used instead of database in small applications or prototypes.
 
-**Note: Ruby 2.0 is required.**
+**Important: Ruby 2.1 is required by MemStore.**
 
 ## Initialization
 
@@ -182,35 +182,35 @@ In other words:
 - `not all` means `!(condition && condition && ...)` or `!condition || !condition || ...`.
 - `none` means `!(condition || condition || ...)` or `!condition && !condition && ...`.
 
-All variants take a `conditions` hash and an optional block.
+All variants take a hash with conditions and/or optional block.
 
-The hash maps attributes names to conditions that should be tested.  
+The hash is expected to map attributes names to conditions that should be tested.  
 Conditions are evaluated using the `===` operator and can be virtually anything:
 
 ```ruby
 store.find(name: "Fred", age: 25)
+# is evaluated as item.name == "Fred" && item.age == 25
 store.find(name: /red/i, age: 10..30)
+# is evaluated as /red/i =~ item.name && (10..30).include?(item.age)
 store.find(child: MyClass)
+# is evaluated as item.child.kind_of?(MyClass)
 store.find(child: -> child { child.valid? })
+# is evaluated as proc.call(item.child)
 ```
 
-Additional types can be used in conditions by supporting the `===` operator. For example:
+Additional types of conditions can be added by supporting the `===` operator.  
+For example, MemStore uses an internal refinement to also support arrays:
 
 ```ruby
-class Array
-  def ===(obj)
-    self.include?(obj)
-  end
-end
-
 store.find(age: [23, 25, 27])
+# is evaluated as [23, 25, 27].include?(item.age)
 ```
 
-The block is invoked with the item *after* the conditions are evaluated. It should return a boolean value:
+The block is invoked with the item *after* the conditions are evaluated.
 
 ```ruby
 store.find(age: 25) { |item| item.age - item.child.age > 20 }
-# is evaluated as (item.age == 25) && (item.age - item.child.age > 20)
+# is evaluated as item.age == 25 && item.age - item.child.age > 20
 ```
 
 In addition to the evaluation logic, the arrays returned by all variants of `find_*` can be merged:

@@ -4,7 +4,7 @@ require "memstore/version"
 Gem::Specification.new do |gem|
   gem.name                  = "memstore"
   gem.version               = MemStore::VERSION
-  gem.required_ruby_version = ">= 2.0.0"
+  gem.required_ruby_version = ">= 2.1.0"
   gem.summary               = "A simple in-memory data store."
   gem.description           = "MemStore is a simple in-memory data store that supports complex search queries."
   gem.authors               = ["Sebastian Klepper"]

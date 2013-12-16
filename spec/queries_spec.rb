@@ -125,4 +125,11 @@ describe MemStore do
     @store.all.collect(&:id).must_equal([0, 1, 2, 4, 6, 7, 8, 9])
   end
 
+  # Array refinement
+
+  it "finds items included in an Array" do
+    matches = @store.find(id: [1, 3, 5])
+    matches.collect(&:id).must_equal([1, 3, 5])
+  end
+
 end
