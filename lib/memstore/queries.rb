@@ -1,5 +1,7 @@
 class MemStore
-  
+
+  using Refinements
+
   ### find ###
   
   # Finds items that fulfill all provided conditions.
