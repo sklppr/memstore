@@ -6,217 +6,130 @@ MemStore is a simple in-memory data store that supports complex search queries.
 
 It’s not in any way supposed to be a database. However, it can be used instead of database in small applications or prototypes.
 
-**Important: Ruby 2.1 is required by MemStore.**
+**Important: Ruby 2.1 is required.**
 
-## Initialization
+## Basics
 
-Creating a data store is utterly simple:
+Creating a data store is straightforward:
 
 ```ruby
 store = MemStore.new
+# => store
 ```
 
-If the store should contain items right away, they can be passed as an array:
-
-```ruby
-store = MemStore.new(items: [a, b, c])
-```
-
-## Customization
-
-The way the data store indexes items and accesses their attributes can be customized so that arbitrary data can be stored.
-
-```ruby
-store = MemStore.new(key: ..., access: ...)
-```
-
-By default, MemStore will call `item.hash` to obtain a unique identifier.
-
-If something provided for `key`, it will be used as a parameter to the `access` method.  
-In most cases, this will be a Symbol or String:
-
-```ruby
-store = MemStore.new(key: :id)
-# store will try to access attribute :id
-store = MemStore.new(key: "id")
-# store will try to access attribute "id"
-```
-
-However, if a Proc or Method is provided, it will be called and passed the item:
-
-```ruby
-store = MemStore.new(key: -> item { ... })
-# or
-store = MemStore.new(key: Proc.new { |item| ... })
-# or
-def get_custom_key(item)
-  ...
-end
-store = MemStore.new(key: method(:get_custom_key))
-```
-
-By default, MemStore will access attributes as methods, i.e. using `item.send(attribute)`:
-
-```ruby
-store = MemStore.new(key: :id)
-# store will call item.id to obtain key
-```
-
-If something is provided for `access`, it will be used as a method identifier which will be called and passed the attribute:
-
-```ruby
-store = MemStore.new(key: :id, access: :get)
-# store will call item.get(:id) to obtain key
-```
-
-However, if a Proc or Method is provided, it will be called and passed the item and attribute:
-
-```ruby
-store = MemStore.new(access: -> item, attribute { ... })
-# or
-store = MemStore.new(access: Proc.new { |item, attribute| ... })
-# or
-def extract_attribute(item, attribute)
-  ...
-end
-store = MemStore.new(access: method(:extract_attribute))
-```
-
-Using these two options, a multitude of variants can be configured, e.g.:
-
-```ruby
-# Use item.hash and item.attribute
-store = MemStore.new
-# Use item.hash and item.get(attribute)
-store = MemStore.new(access: :get)
-# Store hashes: use item[attribute] and :id as key
-store = MemStore.new(access: :[], key: :id)
-# Use one method for all attributes but a special method for key
-store = MemStore.new(access: :get, key: -> item { item.key })
-```
-
-## Adding Items
-
-Single items can be added using the shovel operator `<<`:
+Adding items is equally simple. Add a single item using the shovel operator `<<` or multiple items using `add`:
 
 ```ruby
 store << a
 # => store
-```
-
-Multiple items can be added using `add`:
-
-```ruby
 store.add(a, b, c)
 # => store
 ```
 
-## Getting Items
+To make things easier, MemStore’s constructor takes a collection of items that will be added right away:
 
-Single items can be accessed by their key using the bracket operator `[]`:
+```ruby
+store = MemStore.new(items: [a, b, c])
+# => store
+```
+
+You can access single items by their key (see [Customization](#customization)) using the bracket operator `[]` or multiple items using `get`:
 
 ```ruby
 store[1]
 # => a
-```
-
-Multiple items can be retrieved using `get`, which always returns an array:
-
-```ruby
-store.get(1)
-# => [a]
 store.get(1, 2, 3)
 # => [a, b, c]
 ```
 
-The array contains `nil` when there is no item for a key:
+You can also get all items at once using `all` and a hash of all items with their keys using `items`:
 
 ```ruby
-store.get(1, -1, 3)
-# => [a, nil, c]
-```
-
-`items` provides direct read/write access to the internal items hash:
-
-```ruby
+store.all
+# => [a, b, c]
 store.items
-# => {}
-store.items = { 1 => a, 2 => b, 3 => c }
 # => { 1 => a, 2 => b, 3 => c }
 ```
 
-## Finding Items
+## Queries
 
-The following methods are available to query the data store:
+MemStore provides methods to find, count and delete items using complex queries:
 
-- `find_all` (alias `find`)
-- `find_any`
-- `find_one`
-- `find_not_all`
-- `find_none`
-- `first_all` (alias `first`)
-- `first_any`
-- `first_one`
-- `first_not_all`
-- `first_none`
+- `find_*` returns all items matching the query
+- `first_*` returns the first item matching the query
+- `count_*` returns the number of items matching the query
+- `delete_*` deletes and returns all items matching the query
 
-The first part indicates what is returned:
+These methods have one of the following suffixes:
 
-- `find_*` returns all matches.
-- `first_*` returns the first match.
-- `count_*` returns the number of matches.
-
-The second part indicates how conditions are evaluated:
-
-- `*_all` matches items *fulfilling all* conditions.
-- `*_any` matches items *fulfilling at least one* condition.
-- `*_one` matches items *fulfilling exactly one* condition.
-- `*_not_all` matches items *violating at least one* condition.
-- `*_none` matches items *violating all* conditions.
+- `*_all` matches items *fulfilling all* conditions
+- `*_any` matches items *fulfilling at least one* condition
+- `*_one` matches items *fulfilling exactly one* condition
+- `*_not_all` matches items *violating at least one* condition
+- `*_none` matches items *violating all* conditions
 
 In other words:
 
-- `all` means `condition && condition && ...`.
-- `any` means `condition || condition || ...`.
-- `one` means `condition ^ condition ^ ...`.
-- `not all` means `!(condition && condition && ...)` or `!condition || !condition || ...`.
-- `none` means `!(condition || condition || ...)` or `!condition && !condition && ...`.
+- `all` means `condition && condition && ...`
+- `any` means `condition || condition || ...`
+- `one` means `condition ^ condition ^ ...`
+- `not all` means `!(condition && condition && ...)` or `!condition || !condition || ...`
+- `none` means `!(condition || condition || ...)` or `!condition && !condition && ...`
 
-All variants take a hash with conditions and/or optional block.
+For convenience, there are aliases for the `*_all` variants:
 
-The hash is expected to map attributes names to conditions that should be tested.  
-Conditions are evaluated using the `===` operator and can be virtually anything:
+- `find` is an alias of `find_all`
+- `first` is an alias of `first_all`
+- `count` is an alias of `count_all`
+- `delete` is an alias of `delete_all`
+
+All methods take a hash of conditions and/or a block.
+
+The hash is expected to map attributes (see [Customization](#customization)) to conditions.  
+Conditions are evaluated using the case equality operator: `condition === item`
+
+This means conditions can be virtually anything:
 
 ```ruby
-store.find(name: "Fred", age: 25)
-# is evaluated as item.name == "Fred" && item.age == 25
-store.find(name: /red/i, age: 10..30)
-# is evaluated as /red/i =~ item.name && (10..30).include?(item.age)
+store.find(name: "John", age: 42)
+# is equivalent to item.name == "John" && item.age == 42
+store.find(name: /^Jo/, age: 23..42)
+# is equivalent to /^Jo/ =~ item.name && (23..42).include?(item.age)
 store.find(child: MyClass)
-# is evaluated as item.child.kind_of?(MyClass)
+# is equivalent to item.child.kind_of?(MyClass)
 store.find(child: -> child { child.valid? })
-# is evaluated as proc.call(item.child)
+# is equivalent to proc.call(item.child)
 ```
 
-Additional types of conditions can be added by supporting the `===` operator.  
-For example, MemStore uses an internal refinement to also support arrays:
+You can enable additional types of conditions simply by implementing `===`.  
+For example, MemStore also supports arrays using an internal refinement:
 
 ```ruby
 store.find(age: [23, 25, 27])
-# is evaluated as [23, 25, 27].include?(item.age)
+# is equivalent to [23, 25, 27].include?(item.age)
+```
+
+The implementation looks like this:
+
+```ruby
+refine Array do
+  def ===(obj)
+    include?(obj)
+  end
+end
 ```
 
 The block is invoked with the item *after* the conditions are evaluated.
 
 ```ruby
 store.find(age: 25) { |item| item.age - item.child.age > 20 }
-# is evaluated as item.age == 25 && item.age - item.child.age > 20
+# is equivalent to item.age == 25 && item.age - item.child.age > 20
 ```
 
-In addition to the evaluation logic, the arrays returned by all variants of `find_*` can be merged:
+In addition to the query logic, you can merge the arrays returned by `find_*`:
 
 ```ruby
-store.find(...) | store.find(...) | store.find(...)
+store.find_all(...) | store.find_any(...) | store.find_none(...)
 ```
 
 Note that the pipe operator `|` already eliminates duplicates:
@@ -226,48 +139,128 @@ Note that the pipe operator `|` already eliminates duplicates:
 # => [a, b, c, d, e]
 ```
 
-## Deleting Items
+## Customization
 
-Items can be deleted directly by key or by reference.
+### Default Behavior
 
-`delete_item` deletes a single items and returns the item or nil if the item didn’t exist.  
-`delete_items` deletes multiple items and returns an array of them with `nil` where an item didn’t exist.  
-`delete_key` and `delete_keys` work similarly, except using keys instead of items.
+By default, MemStore indexes items using `Object#hash`:
 
 ```ruby
-store.delete_item(a)
-# => a
-store.delete_items(b, c, d)
-# => [b, c, d]
-store.delete_key(5)
-# => e
-store.delete_keys(6, 7, 8)
-# => [f, g, h]
+store = MemStore.new
+store << item
+# calls item.hash to retrieve key
+store[item.hash]
+# => item
 ```
 
-Similar to the `find_*` and `count_*` methods, the following methods are available to delete items:
-
-- `delete_all` (alias `delete`)
-- `delete_any`
-- `delete_one`
-- `delete_not_all`
-- `delete_none`
-
-All methods return an array of items that were deleted from the data store.
-
-## Counting Items
-
-`size` returns the current number of items in the data store:
+When you use `find_*`, `first_*`, `count_*` or `delete_*`, MemStore calls attributes as methods on your items using `Object#send`:
 
 ```ruby
-store.size
-# => 3
+store = MemStore.new
+store << item
+store.find(age: 42, name: "John")
+# calls item.age and item.name to retrieve attributes
 ```
 
-Similar to the `find_*` methods, the following methods are available to count items:
+This means that it doesn’t make a difference whether you use strings or symbols in the conditions hash:
 
-- `count_all` (alias `count`)
-- `count_any`
-- `count_one`
-- `count_not_all`
-- `count_none`
+```ruby
+store.find("age" => 42, "name" => "John")
+# calls item.age and item.name to retrieve attributes
+```
+
+*Note that using Strings will result in a performance penalty because `Object#send` expects Symbols.*
+
+### Custom Key
+
+You’ll probably want MemStore to use a specific attribute to index items.  
+This is possible using the `key` parameter when creating a data store:
+
+```ruby
+store = MemStore.new(key: :id)
+store << item
+# calls item.id to retrieve key
+store[item.id]
+# => item
+```
+
+Whatever you provide as `key` will be treated as an attribute.  
+So, by default, the according method will be called on your item.
+
+### Custom Access Method
+
+If you want to change how attributes are accessed, you can use the `access` parameter when creating a data store:
+
+```ruby
+store = MemStore.new(key: :id, access: :[])
+# now you can store hashes, e.g. { id: 5, age: 42, name: "John" }
+store << item
+# calls item[:id] to retrieve key
+store.find(age: 42, name: "John")
+# calls item[:age] and item[:name] to retrieve attributes
+```
+
+If you provide a Symbol or String, it will be treated as a method name.  
+*Note that providing a String will result in a performance penalty because `Object#send` expects Symbols.*
+
+To access an attribute, MemStore will call the according method on your item and pass the requested attribute to it.  
+This means `key` and attributes in the conditions hash must be whatever your method expects:
+
+```ruby
+# assuming that items have a method `get` that expects a String:
+store = MemStore.new(key: "id", access: :get)
+store << item
+# calls item.get("id") to retrieve key
+store.find("age" => 42, "name" => "John")
+# calls item.get("age") and item.get("name") to retrieve attributes
+```
+
+### Advanced Customization
+
+If you want to do something special to obtain a key, you can provide a Proc or Method.  
+It will be passed the item for which MemStore needs a key and is expected to return a truly unique identifier for that item:
+
+```ruby
+def special_hash(item)
+ # ...
+end
+
+# lambda:
+store = MemStore.new(key: -> item { special_hash(item) })
+# Proc:
+store = MemStore.new(key: Proc.new { |item| special_hash(item) })
+# Method:
+store = MemStore.new(key: method(:special_hash))
+```
+
+Note that this is also a way to circumvent the access method for attributes.  
+For example, you might want to use one method `get` to access all attributes but a different method `id` should be used for indexing:
+
+```ruby
+# this way, item.get(:id) would be used:
+store = MemStore.new(access: :get, key: :id)
+# circumvent the access method like this:
+store = MemStore.new(access: :get, key: -> item { item.id })
+# or even shorter:
+store = MemStore.new(access: :get, key: Proc.new(&:id))
+store << item
+# calls item.id to retrieve key
+store.find(age: 42, name: "John")
+# calls item.get(:age) and item.get(:name) to retrieve attributes
+```
+
+Likewise, you can provide a Proc or Method to be called when accessing attributes.  
+It will be passed both the item in question and the attribute to be retrieved and is expected to return the appropriate value:
+
+```ruby
+def special_accessor(item, attribute)
+  # ...
+end
+
+# lambda:
+store = MemStore.new(access: -> item, attribute { special_accessor(item, attribute) })
+# Proc:
+store = MemStore.new(access: Proc.new { |item| special_accessor(item, attribute) })
+# Method:
+store = MemStore.new(access: method(:special_accessor))
+```
