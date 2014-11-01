@@ -64,4 +64,12 @@ describe MemStore do
     @store.all.must_equal([0.0, 1.0, 2.0, 7.0, 8.0, 9.0])
   end
 
+  it "collects attribute values using the specified access method" do
+    @store.collect(:to_i).must_equal(@store.all.map { |n| n.to_i })
+  end
+
+  it "provides a shortcut to invoke map on all items" do
+    @store.map { |n| n.to_i }.must_equal(@store.all.map { |n| n.to_i })
+  end
+
 end
