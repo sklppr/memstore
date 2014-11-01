@@ -83,6 +83,8 @@ For convenience, there are aliases for the `*_all` variants:
 - `count` is an alias of `count_all`
 - `delete` is an alias of `delete_all`
 
+### Conditions
+
 All methods take a hash of conditions and/or a block.
 
 The hash is expected to map attributes (see [Customization](#customization)) to conditions.  
@@ -119,6 +121,8 @@ refine Array do
 end
 ```
 
+### Block
+
 The block is invoked with the item *after* the conditions are evaluated.
 
 ```ruby
@@ -126,18 +130,37 @@ store.find(age: 25) { |item| item.age - item.child.age > 20 }
 # is equivalent to item.age == 25 && item.age - item.child.age > 20
 ```
 
-In addition to the query logic, you can merge the arrays returned by `find_*`:
+### Operators
+
+Since all queries return arrays, you can use set operations.  
+This can be especially useful to avoid overly complex queries.
+
+Assume queries with these results:
 
 ```ruby
-store.find_all(...) | store.find_any(...) | store.find_none(...)
-```
-
-Note that the pipe operator `|` already eliminates duplicates:
-
-```ruby
-[a, b, c] | [c, d, e]
+store.find_any(...)
 # => [a, b, c, d, e]
+store.find_all(...)
+# => [a, b, c]
+store.find_none()
+# => [b, c, e]
 ```
+
+Combine results using the union operator `|`:
+
+```ruby
+store.find_all(...) | store.find_none(...)
+# => [a, b, c, e]
+```
+
+Restrict results using the intersection operator `&`:
+
+```ruby
+store.find_any(...) & store.find_none(...)
+# => [a, d]
+```
+
+Note that both operators exclude duplicates and preserve order.
 
 ## Customization
 
@@ -260,7 +283,7 @@ end
 # lambda:
 store = MemStore.new(access: -> item, attribute { special_accessor(item, attribute) })
 # Proc:
-store = MemStore.new(access: Proc.new { |item| special_accessor(item, attribute) })
+store = MemStore.new(access: Proc.new { |item, attribute| special_accessor(item, attribute) })
 # Method:
 store = MemStore.new(access: method(:special_accessor))
 ```
