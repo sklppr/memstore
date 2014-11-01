@@ -126,4 +126,22 @@ class MemStore
     keys.collect { |key| @items.delete(key) }
   end
 
+  # Collects values of given attribute from all items.
+  #
+  # attribute - name of attribute to be collected (symbol or string)
+  #
+  # Returns an array of attribute values of each item.
+  def collect(attribute)
+    all.collect { |item| access_attribute(item, attribute) }
+  end
+
+  # Maps given block to all items.
+  #
+  # block - block to invoke with each item
+  #
+  # Returns an array of results from each block invocation.
+  def map(&block)
+    all.map(&block)
+  end
+
 end

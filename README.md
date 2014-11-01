@@ -162,6 +162,43 @@ store.find_any(...) & store.find_none(...)
 
 Note that both operators exclude duplicates and preserve order.
 
+## Map & Reduce
+
+MemStore provides a `map` method which is a shortcut to `store.all.map`:
+
+```ruby
+store.map { |item| "#{item.name} (#{item.age})" }
+# => ["Peter (23)", "Paul (42)", "Mary (33)"]
+```
+
+Since the result is an array, you can directly call `reduce` on it:
+
+```ruby
+store.map { |item| item.name.length }.reduce { |sum, n| sum + n }
+# => 13
+```
+
+If you simply want to grab a certain attribute from each item, you can use `collect` instead:
+
+```ruby
+store.collect(:age)
+# is equivalent to
+store.map { |item| item.age }
+```
+
+This automatically uses the correct access method for attributes (see [Customization](#customization)).
+
+It also returns an array so you can directly chain `reduce`:
+
+```ruby
+store.collect(:age)
+# => [23, 42, 33]
+store.collect(:age).reduce(:+)
+# => 98
+```
+
+*Of course, you can also use `items` or `all` to directly work with a hash or array of items.*
+
 ## Customization
 
 ### Default Behavior
@@ -192,7 +229,7 @@ store.find("age" => 42, "name" => "John")
 # calls item.age and item.name to retrieve attributes
 ```
 
-*Note that using Strings will result in a performance penalty because `Object#send` expects Symbols.*
+*Note that using strings will result in a performance penalty because `Object#send` expects symbols.*
 
 ### Custom Key
 
@@ -223,14 +260,14 @@ store.find(age: 42, name: "John")
 # calls item[:age] and item[:name] to retrieve attributes
 ```
 
-If you provide a Symbol or String, it will be treated as a method name.  
-*Note that providing a String will result in a performance penalty because `Object#send` expects Symbols.*
+If you provide a symbol or string, it will be treated as a method name.  
+*Note that providing a string will result in a performance penalty because `Object#send` expects symbols.*
 
 To access an attribute, MemStore will call the according method on your item and pass the requested attribute to it.  
 This means `key` and attributes in the conditions hash must be whatever your method expects:
 
 ```ruby
-# assuming that items have a method `get` that expects a String:
+# assuming that items have a method `get` that expects a string:
 store = MemStore.new(key: "id", access: :get)
 store << item
 # calls item.get("id") to retrieve key
