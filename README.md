@@ -4,7 +4,7 @@
 
 MemStore is a simple in-memory data store that supports complex search queries. It’s not in any way supposed to be a database. However, it can be used instead of database in small applications or prototypes.
 
-The philosophy behind MemStore is that pure Ruby already gives you several advanced features like complex query logic for finding/counting/deleting items, set operations, map/reduce operations, lazy enumeration and serialization.
+The philosophy behind MemStore is that pure Ruby already gives you several advanced features like complex query logic, finding/counting/deleting items, set operations, map/reduce operations, type differentiation, lazy enumeration and serialization.
 
 MemStore provides a thin layer of abstraction to make these things easier to use and lots of examples of how common use cases can be realized.
 
@@ -227,6 +227,31 @@ store.all.reduce(0) { |sum, item| sum + item.age }
 # => 98
 ```
 
+## Type Restriction
+
+MemStore is able to restrict access and queries based on item type. The access methods `items`, `all` and `size` as well as all query methods (`find_*`, `lazy_find_*`, `first_*`, `count_*`, `delete_*`) optionally take a type identifier as their first parameter.
+
+```ruby
+store.items(MyClass)
+# returns hash of all items of that type
+store.all(MyClass)
+# returns array of all items of that type
+store.size(MyClass)
+# returns number of all items of that type
+store.find(MyClass, age: 25..35)
+# returns all items of that type fulfilling the conditions
+store.lazy_find(MyClass, age: 25..35)
+# returns lazy enumerator to find items of that type fulfilling the conditions
+store.first(MyClass, age: 25..35)
+# returns first item of that type fulfilling the conditions
+store.count(MyClass, age: 25..35)
+# returns count of items of that type fulfilling the conditions
+store.delete(MyClass, age: 25..35)
+# deletes and returns array of items of that type fulfilling the conditions
+```
+
+If a type is provided, the result will be restricted to only items of that type. In case of queries this filter is applied before evaluating conditions and is not affected by the query logic. See [Customization](#customization) for how to provide your own type attribute instead of using the item’s class.
+
 ## Customization
 
 ### Default Behavior
@@ -241,23 +266,22 @@ store[item.hash]
 # => item
 ```
 
-When you use `find_*`, `first_*`, `count_*` or `delete_*`, MemStore calls attributes as methods on your items using `Object#send`:
+When you use `find_*`, `lazy_find_*`, `first_*`, `count_*` or `delete_*`, MemStore calls attributes as methods on your items using `Object#send`. This also means that it doesn’t make a difference whether you use strings or symbols in the conditions hash.
 
 ```ruby
-store = MemStore.new
-store << item
 store.find(age: 42, name: "John")
-# calls item.age and item.name to retrieve attributes
+store.find("age" => 42, "name" => "John")
+# both call item.age and item.name to retrieve attributes
 ```
 
-This means that it doesn’t make a difference whether you use strings or symbols in the conditions hash:
+Type is determined using `Object#class` so you can easily restrict your queries when working with your own entity classes. Note that type comparison uses `==` so subclasses will not be matched, effectively `instance_of?` and not `kind_of?`.
 
 ```ruby
-store.find("age" => 42, "name" => "John")
-# calls item.age and item.name to retrieve attributes
+store.all(MyClass)
+# calls item.class to determine type
 ```
 
-### Custom Key
+### Custom Key Accessor
 
 You’ll probably want MemStore to use a specific attribute to index items.  
 This is possible using the `key` parameter when creating a data store:
@@ -273,7 +297,18 @@ store[item.id]
 Whatever you provide as `key` will be treated as an attribute.  
 So, by default, the according method will be called on your item.
 
-### Custom Access Method
+### Custom Type Accessor
+
+You can also use a custom property to differentiate item types.  
+To override the default way of using the item’s class, provide `type` parameter when creating a store:
+
+```ruby
+store = MemStore.new(type: :type)
+store.all(MyClass)
+# calls item.type to determine type
+```
+
+### Custom Attribute Accessor
 
 If you want to change how attributes are accessed, you can use the `access` parameter when creating a data store:
 
@@ -300,48 +335,80 @@ store.find("age" => 42, "name" => "John")
 # calls item.get("age") and item.get("name") to retrieve attributes
 ```
 
-### Advanced Customization
+### Advanced Custom Access
 
-If you want to do something special to obtain an attribute, you can provide a Proc or Method. It will be passed both the item in question and the attribute to be retrieved and is expected to return the appropriate value:
+If you want to do something special to obtain an attribute, key or type, you can provide a lambda, proc or method. It will be passed both the item in question and the attribute, key or type to be retrieved and is expected to return the appropriate value.
+
+#### Attributes
+
+You can provide a custom lambda/proc/method to be invoked when attributes of an item need to be accessed. It will be called with the item and attribute name to be fetched.
 
 ```ruby
-def special_accessor(item, attribute)
-  # ...
-end
+# Lambda:
+store = MemStore.new(access: -> item, attribute { item[attribute] })
 
-# lambda:
-store = MemStore.new(access: -> item, attribute { special_accessor(item, attribute) })
 # Proc:
-store = MemStore.new(access: Proc.new { |item, attribute| special_accessor(item, attribute) })
+store = MemStore.new(access: Proc.new { |item, attribute| item.attribute })
+
 # Method:
-store = MemStore.new(access: method(:special_accessor))
+def item_attribute(item, attribute)
+  item.special_accessor(attribute)
+end
+store = MemStore.new(access: method(:item_attribute))
 ```
 
-Likewise, you can provide a Proc or Method to be called when accessing keys. It will be passed the item for which MemStore needs a key and is expected to return a truly unique identifier for that item:
+#### Key
+
+Likewise, you can provide a lambda/proc/method to be called when accessing keys. It will be passed the item for which MemStore needs a key and is expected to return a truly unique identifier for that item.
 
 ```ruby
-def special_hash(item)
- # ...
-end
+# Lambda:
+store = MemStore.new(key: -> item { item[:special_identifier] })
 
-# lambda:
-store = MemStore.new(key: -> item { special_hash(item) })
 # Proc:
-store = MemStore.new(key: Proc.new { |item| special_hash(item) })
+store = MemStore.new(key: Proc.new { |item| item.special_identifier })
+
 # Method:
-store = MemStore.new(key: method(:special_hash))
+def item_key(item)
+ item.special_identifier
+end
+store = MemStore.new(key: method(:item_key))
 ```
 
-This is also a way to use a different access method for keys than for other attributes. For example, you might want to use a method `get` to access attributes but a different method `id` should be used to obtain keys:
+This is also a way to use a different access method for keys than for other attributes. For example, you might want to use a method `get` to access attributes but a different method `id` should be used to obtain keys.
 
 ```ruby
-# this way, item.get(:id) would be used:
-store = MemStore.new(access: :get, key: :id)
-# circumvent the access method like this:
-store = MemStore.new(access: :get, key: -> item { item.id })
-# or even shorter:
 store = MemStore.new(access: :get, key: Proc.new(&:id))
+store << item
 # calls item.id to retrieve key
+store.find(age: 42, name: "John")
+# calls item.get(:age) and item.get(:name) to retrieve attributes
+```
+
+#### Type
+
+Similar to key access, you can provide a lambda/proc/method that determines the type of an item. It will be called with the item and is expected to return a type identifier.
+
+```ruby
+# Lambda:
+store = MemStore.new(type: -> item { item[:special_type] })
+
+# Proc:
+store = MemStore.new(type: Proc.new { |item| item.special_type })
+
+# Method:
+def item_type(item)
+ item.special_type
+end
+store = MemStore.new(key: method(:item_type))
+```
+
+This is also a way to use a different access method for type than for other attributes, similar to using a separate access method for keys.
+
+```ruby
+store = MemStore.new(access: :get, type: Proc.new(&:type))
+store.all(MyClass)
+# calls item.type to determine type
 store.find(age: 42, name: "John")
 # calls item.get(:age) and item.get(:name) to retrieve attributes
 ```

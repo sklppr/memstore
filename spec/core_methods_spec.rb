@@ -10,7 +10,7 @@ describe MemStore do
 
   # Accessing internals
 
-  it "provides access to its internal hash" do
+  it "provides read/write access to its internal hash" do
     hash = { 1 => 2.0, 2 => 4.0, 3 => 6.0 }
     @store.items = hash
     @store.items.must_equal(hash)
