@@ -68,8 +68,4 @@ describe MemStore do
     @store.collect(:to_i).must_equal(@store.all.map { |n| n.to_i })
   end
 
-  it "provides a shortcut to invoke map on all items" do
-    @store.map { |n| n.to_i }.must_equal(@store.all.map { |n| n.to_i })
-  end
-
 end

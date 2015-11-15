@@ -162,33 +162,9 @@ store.find_any(...) & store.find_none(...)
 
 Note that both operators exclude duplicates and preserve order.
 
-## Map & Reduce
+### Collection Operations
 
-MemStore provides a `map` method which is a shortcut to `store.all.map`:
-
-```ruby
-store.map { |item| "#{item.name} (#{item.age})" }
-# => ["Peter (23)", "Paul (42)", "Mary (33)"]
-```
-
-Since the result is an array, you can directly call `reduce` on it:
-
-```ruby
-store.map { |item| item.name.length }.reduce { |sum, n| sum + n }
-# => 13
-```
-
-If you simply want to grab a certain attribute from each item, you can use `collect` instead:
-
-```ruby
-store.collect(:age)
-# is equivalent to
-store.map { |item| item.age }
-```
-
-This automatically uses the correct access method for attributes (see [Customization](#customization)).
-
-It also returns an array so you can directly chain `reduce`:
+MemStore provides a shortcut to collect attribute values from all items. The result is an array and could also be used for map/reduce operations.
 
 ```ruby
 store.collect(:age)
@@ -197,7 +173,16 @@ store.collect(:age).reduce(:+)
 # => 98
 ```
 
-*Of course, you can also use `items` or `all` to directly work with a hash or array of items.*
+This shortcut automatically uses the correct access method for attributes (see [Customization](#customization)).
+
+Of course, you can use `store.items` or `store.all` to directly work with the hash or array of items:
+
+```ruby
+store.all.map { |item| "#{item.name} (#{item.age})" }
+# => ["Peter (23)", "Paul (42)", "Mary (33)"]
+store.all.reduce(0) { |sum, item| sum + item.age }
+# => 98
+```
 
 ## Customization
 

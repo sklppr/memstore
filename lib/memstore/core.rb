@@ -135,13 +135,4 @@ class MemStore
     all.collect { |item| access_attribute(item, attribute) }
   end
 
-  # Maps given block to all items.
-  #
-  # block - block to invoke with each item
-  #
-  # Returns an array of results from each block invocation.
-  def map(&block)
-    all.map(&block)
-  end
-
 end
