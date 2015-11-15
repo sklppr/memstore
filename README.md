@@ -2,11 +2,13 @@
 
 *A simple in-memory data store.*
 
-MemStore is a simple in-memory data store that supports complex search queries.
+MemStore is a simple in-memory data store that supports complex search queries. It’s not in any way supposed to be a database. However, it can be used instead of database in small applications or prototypes.
 
-It’s not in any way supposed to be a database. However, it can be used instead of database in small applications or prototypes.
+The philosophy behind MemStore is that pure Ruby already gives you several advanced features like complex query logic for finding/counting/deleting items, set operations, map/reduce operations, lazy enumeration and serialization.
 
-**Important: Ruby 2.1 is required.**
+MemStore provides a thin layer of abstraction to make these things easier to use and lots of examples of how common use cases can be realized.
+
+**Ruby 2.1+ is required.**
 
 ## Basics
 
@@ -16,6 +18,8 @@ Creating a data store is straightforward:
 store = MemStore.new
 # => store
 ```
+
+### Adding Items
 
 Adding items is equally simple. Add a single item using the shovel operator `<<` or multiple items using `add`:
 
@@ -32,6 +36,8 @@ To make things easier, MemStore’s constructor takes a collection of items that
 store = MemStore.new(items: [a, b, c])
 # => store
 ```
+
+### Accessing Items
 
 You can access single items by their key (see [Customization](#customization)) using the bracket operator `[]` or multiple items using `get`:
 
@@ -51,11 +57,33 @@ store.items
 # => { 1 => a, 2 => b, 3 => c }
 ```
 
+### Deleting Items
+
+Items can be deleted by reference, either one or multiple items can be deleted at the same time.
+All methods return items that were deleted or nil where an item couldn’t be found.
+
+```ruby
+store.delete_item(a)
+# => a
+store.delete_items(a, xyz, b)
+# => [a, nil, b]
+```
+
+Similarly to the above, items can also be deleted by key:
+
+```ruby
+store.delete_key(1)
+# => obj
+store.delete_keys(1, -99, 2)
+# => [a, nil, b]
+```
+
 ## Queries
 
 MemStore provides methods to find, count and delete items using complex queries:
 
 - `find_*` returns all items matching the query
+- `lazy_find_*` returns a lazy enumerator of all items matching the query
 - `first_*` returns the first item matching the query
 - `count_*` returns the number of items matching the query
 - `delete_*` deletes and returns all items matching the query
@@ -79,39 +107,54 @@ In other words:
 For convenience, there are aliases for the `*_all` variants:
 
 - `find` is an alias of `find_all`
+- `lazy_find` is an alias of `lazy_find_all`
 - `first` is an alias of `first_all`
 - `count` is an alias of `count_all`
 - `delete` is an alias of `delete_all`
 
+All methods take a hash of conditions and/or a block. 
+
 ### Conditions
 
-All methods take a hash of conditions and/or a block.
+The conditions hash is expected to map attributes (see [Customization](#customization)) to criterions. Conditions are evaluated using the case equality operator `criterion === value` and can be virtually anything.
 
-The hash is expected to map attributes (see [Customization](#customization)) to conditions.  
-Conditions are evaluated using the case equality operator: `condition === item`
-
-This means conditions can be virtually anything:
+Objects like strings and numbers will be compared:
 
 ```ruby
 store.find(name: "John", age: 42)
-# is equivalent to item.name == "John" && item.age == 42
+# equivalent to item.name == "John" && item.age == 42
+```
+
+Arrays and ranges will be checked for inclusion:
+
+```ruby
+store.find(age: [23, 25, 27], height: 170..180)
+# equivalent to [23, 25, 27].include?(item.age) && (170..180).include?(item.height)
+```
+
+Regular expressions will be evaluated:
+
+```ruby
 store.find(name: /^Jo/, age: 23..42)
-# is equivalent to /^Jo/ =~ item.name && (23..42).include?(item.age)
+# equivalent to /^Jo/ =~ item.name && (23..42).include?(item.age)
+```
+
+Classes will be compared (also matches on subclasses):
+
+```ruby
 store.find(child: MyClass)
-# is equivalent to item.child.kind_of?(MyClass)
+# equivalent to item.child.kind_of?(MyClass)
+```
+
+Blocks will be invoked with the attribute value:
+
+```ruby
 store.find(child: -> child { child.valid? })
-# is equivalent to proc.call(item.child)
+# equivalent to proc.call(item.child)
 ```
 
 You can enable additional types of conditions simply by implementing `===`.  
-For example, MemStore also supports arrays using an internal refinement:
-
-```ruby
-store.find(age: [23, 25, 27])
-# is equivalent to [23, 25, 27].include?(item.age)
-```
-
-The implementation looks like this:
+For example, arrays are supported using refinements like this one:
 
 ```ruby
 refine Array do
@@ -127,7 +170,7 @@ The block is invoked with the item *after* the conditions are evaluated.
 
 ```ruby
 store.find(age: 25) { |item| item.age - item.child.age > 20 }
-# is equivalent to item.age == 25 && item.age - item.child.age > 20
+# equivalent to item.age == 25 && item.age - item.child.age > 20
 ```
 
 ### Operators
@@ -214,8 +257,6 @@ store.find("age" => 42, "name" => "John")
 # calls item.age and item.name to retrieve attributes
 ```
 
-*Note that using strings will result in a performance penalty because `Object#send` expects symbols.*
-
 ### Custom Key
 
 You’ll probably want MemStore to use a specific attribute to index items.  
@@ -246,7 +287,6 @@ store.find(age: 42, name: "John")
 ```
 
 If you provide a symbol or string, it will be treated as a method name.  
-*Note that providing a string will result in a performance penalty because `Object#send` expects symbols.*
 
 To access an attribute, MemStore will call the according method on your item and pass the requested attribute to it.  
 This means `key` and attributes in the conditions hash must be whatever your method expects:
@@ -262,8 +302,22 @@ store.find("age" => 42, "name" => "John")
 
 ### Advanced Customization
 
-If you want to do something special to obtain a key, you can provide a Proc or Method.  
-It will be passed the item for which MemStore needs a key and is expected to return a truly unique identifier for that item:
+If you want to do something special to obtain an attribute, you can provide a Proc or Method. It will be passed both the item in question and the attribute to be retrieved and is expected to return the appropriate value:
+
+```ruby
+def special_accessor(item, attribute)
+  # ...
+end
+
+# lambda:
+store = MemStore.new(access: -> item, attribute { special_accessor(item, attribute) })
+# Proc:
+store = MemStore.new(access: Proc.new { |item, attribute| special_accessor(item, attribute) })
+# Method:
+store = MemStore.new(access: method(:special_accessor))
+```
+
+Likewise, you can provide a Proc or Method to be called when accessing keys. It will be passed the item for which MemStore needs a key and is expected to return a truly unique identifier for that item:
 
 ```ruby
 def special_hash(item)
@@ -278,8 +332,7 @@ store = MemStore.new(key: Proc.new { |item| special_hash(item) })
 store = MemStore.new(key: method(:special_hash))
 ```
 
-Note that this is also a way to circumvent the access method for attributes.  
-For example, you might want to use one method `get` to access all attributes but a different method `id` should be used for indexing:
+This is also a way to use a different access method for keys than for other attributes. For example, you might want to use a method `get` to access attributes but a different method `id` should be used to obtain keys:
 
 ```ruby
 # this way, item.get(:id) would be used:
@@ -288,24 +341,7 @@ store = MemStore.new(access: :get, key: :id)
 store = MemStore.new(access: :get, key: -> item { item.id })
 # or even shorter:
 store = MemStore.new(access: :get, key: Proc.new(&:id))
-store << item
 # calls item.id to retrieve key
 store.find(age: 42, name: "John")
 # calls item.get(:age) and item.get(:name) to retrieve attributes
-```
-
-Likewise, you can provide a Proc or Method to be called when accessing attributes.  
-It will be passed both the item in question and the attribute to be retrieved and is expected to return the appropriate value:
-
-```ruby
-def special_accessor(item, attribute)
-  # ...
-end
-
-# lambda:
-store = MemStore.new(access: -> item, attribute { special_accessor(item, attribute) })
-# Proc:
-store = MemStore.new(access: Proc.new { |item, attribute| special_accessor(item, attribute) })
-# Method:
-store = MemStore.new(access: method(:special_accessor))
 ```
