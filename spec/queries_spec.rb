@@ -39,6 +39,33 @@ describe MemStore do
     matches.collect(&:id).must_equal([3, 5])
   end
 
+  # lazy find
+
+  it "provides a lazy enumerator of all items fulfilling all conditions" do
+    matches = @store.lazy_find_all(id: 3..7, child: String)
+    matches.collect(&:id).force.must_equal([4, 6])
+  end
+
+  it "provides a lazy enumerator of all items fulfilling at least one condition" do
+    matches = @store.lazy_find_any(id: 3..7, child: String)
+    matches.collect(&:id).force.must_equal([0, 2, 3, 4, 5, 6, 7, 8])
+  end
+
+  it "provides a lazy enumerator of all items fulfilling exactly one condition" do
+    matches = @store.lazy_find_one(name: /o/, child: String)
+    matches.collect(&:id).force.must_equal([1, 4, 7, 9])
+  end
+
+  it "provides a lazy enumerator of all items violating at least one condition" do
+    matches = @store.lazy_find_not_all(name: /o/, child: String)
+    matches.collect(&:id).force.must_equal([1, 3, 4, 5, 7, 9])
+  end
+
+  it "provides a lazy enumerator of all items violating all conditions" do
+    matches = @store.lazy_find_none(name: /o/, child: String)
+    matches.collect(&:id).force.must_equal([3, 5])
+  end
+
   # first
 
   it "finds the first item fulfilling all conditions" do
