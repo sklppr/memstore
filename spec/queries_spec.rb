@@ -39,6 +39,10 @@ describe MemStore do
     matches.collect(&:id).must_equal([3, 5])
   end
 
+  it "provides a shortcut for finding items fulfilling all conditions" do
+    @store.method(:find) == @store.method(:find_all)
+  end
+
   # lazy find
 
   it "provides a lazy enumerator of all items fulfilling all conditions" do
@@ -64,6 +68,10 @@ describe MemStore do
   it "provides a lazy enumerator of all items violating all conditions" do
     matches = @store.lazy_find_none(name: /o/, child: String)
     matches.collect(&:id).force.must_equal([3, 5])
+  end
+
+  it "provides a shortcut for lazily finding items fulfilling all conditions" do
+    @store.method(:lazy_find) == @store.method(:lazy_find_all)
   end
 
   # first
@@ -93,6 +101,10 @@ describe MemStore do
     match.id.must_equal(3)
   end
 
+  it "provides a shortcut for finding the first item fulfilling all conditions" do
+    @store.method(:first) == @store.method(:first_all)
+  end
+
   # count
 
   it "counts all items fulfilling all conditions" do
@@ -118,6 +130,10 @@ describe MemStore do
   it "counts all items violating all conditions" do
     count = @store.count_none(name: /o/, child: String)
     count.must_equal([3, 5].length)
+  end
+
+  it "provides a shortcut for counting items fulfilling all conditions" do
+    @store.method(:count) == @store.method(:count_all)
   end
 
   # delete
@@ -150,6 +166,10 @@ describe MemStore do
     deleted = @store.delete_none(name: /o/, child: String)
     deleted.collect(&:id).must_equal([3, 5])
     @store.all.collect(&:id).must_equal([0, 1, 2, 4, 6, 7, 8, 9])
+  end
+
+  it "provides a shortcut for deleting items fulfilling all conditions" do
+    @store.method(:delete) == @store.method(:delete_all)
   end
 
   # Array refinement

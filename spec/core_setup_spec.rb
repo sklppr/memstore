@@ -5,7 +5,7 @@ describe MemStore do
 
   SimpleDummy = Struct.new(:id)
 
-  def id(dummy)
+  def dummy_id(dummy)
     dummy.id
   end
 
@@ -22,43 +22,49 @@ describe MemStore do
 
   it "indexes items using Object#hash by default" do
     store = MemStore.new
-    store.add(@dummy)
+    store << @dummy
     store[@dummy.hash].must_equal(@dummy)
   end
 
-  it "indexes items using a given method name" do
+  it "can index items using a given attribute name" do
     store = MemStore.new(key: :id)
-    store.add(@dummy)
+    store << @dummy
     store[@dummy.id].must_equal(@dummy)
   end
   
-  it "indexes items using a given lambda" do
+  it "can index items using a given lambda" do
     store = MemStore.new(key: -> item { item.id })
-    store.add(@dummy)
+    store << @dummy
     store[@dummy.id].must_equal(@dummy)
   end
   
-  it "indexes items using a given method" do
-    store = MemStore.new(key: method(:id))
-    store.add(@dummy)
+  it "can index items using a given method" do
+    store = MemStore.new(key: method(:dummy_id))
+    store << @dummy
     store[@dummy.id].must_equal(@dummy)
   end
 
-  it "accesses attributes using a given method name" do
+  it "accesses attributes using Object#send by default" do
+    store = MemStore.new
+    store << @dummy
+    store.first(id: @dummy.id).must_equal(@dummy)
+  end
+
+  it "can access attributes using a given method name" do
     store = MemStore.new(key: :id, access: :[])
-    store.add(@hash)
+    store << @hash
     store[@hash[:id]].must_equal(@hash)
   end
 
-  it "accesses attributes using a given lambda" do
+  it "can access attributes using a given lambda" do
     store = MemStore.new(key: :id, access: -> item, attribute { item[attribute] })
-    store.add(@hash)
+    store << @hash
     store[@hash[:id]].must_equal(@hash)
   end
 
-  it "indexes items using Object#hash when an access method but no key is specified" do
+  it "indexes items using Object#hash when an access method but no key accessor is specified" do
     store = MemStore.new(access: :[])
-    store.add(@hash)
+    store << @hash
     store[@hash.hash].must_equal(@hash)
     store[@hash[:id]].must_equal(nil)
   end
