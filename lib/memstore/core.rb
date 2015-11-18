@@ -22,7 +22,7 @@ class MemStore
     # Dynamically define method to access an item's attributes.
     define_singleton_method :access_attribute,
       if access.nil?
-        -> item, attribute { item.send(attribute) }
+        -> item, attribute { item.respond_to?(attribute) ? item.send(attribute) : nil }
       elsif [Symbol, String].include?(access.class)
         -> item, attribute { item.send(access, attribute) }
       elsif access.respond_to?(:call)
