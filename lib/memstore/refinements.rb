@@ -1,10 +1,12 @@
-module Refinements
+class MemStore
   
-  # Enable use of arrays in conditionals.
-  refine Array do
-    def ===(obj)
-      include?(obj)
+  module Refinements
+    
+    # Enable use of case equality operator to test array inclusion.
+    refine Array do
+      alias_method :===, :include?
     end
+    
   end
-
+  
 end
