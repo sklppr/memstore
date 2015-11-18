@@ -9,10 +9,7 @@ class MemStore
   # conditions - Hash mapping attributes to conditions (anything that responds to #===).
   # block      - Optional block taking an item and returning a bool. Evaluated after conditions.
   # 
-  # Return value is different for each use case.
-  # Raises NoMethodError when an item doesn't respond to the attribute access method.
-  # Raises NoMethodError when an item doesn't respond to the type attribute method.
-
+  # Return value is an array of items, with the exception of first_* returning only one item.
   %w[all any one not_all none].each do |variant|
     
     # Return an array of all items matching the query.
@@ -20,28 +17,24 @@ class MemStore
       type, conditions = optional_args(type, conditions)
       all(type).select { |item| method("match_#{variant}?").call(item, conditions, &block) }
     end
-    alias_method :find, :find_all
 
     # Return a lazy enumerator of all items matching the query.
     define_method "lazy_find_#{variant}" do |type=nil, conditions={}, &block|
       type, conditions = optional_args(type, conditions)
       all(type).lazy.select { |item| method("match_#{variant}?").call(item, conditions, &block) }
     end
-    alias_method :lazy_find, :lazy_find_all
 
     # Return first item matching the query.
     define_method "first_#{variant}" do |type=nil, conditions={}, &block|
       type, conditions = optional_args(type, conditions)
       all(type).detect { |item| method("match_#{variant}?").call(item, conditions, &block) }
     end
-    alias_method :first, :first_all
 
     # Return count of all items matching the query.
     define_method "count_#{variant}" do |type=nil, conditions={}, &block|
       type, conditions = optional_args(type, conditions)
       all(type).count { |item| method("match_#{variant}?").call(item, conditions, &block) }
     end
-    alias_method :count, :count_all
 
     # Delete and return an array of all items matching the query.
     define_method "delete_#{variant}" do |type=nil, conditions={}, &block|
@@ -51,9 +44,15 @@ class MemStore
         items
       end
     end
-    alias_method :delete, :delete_all
 
   end
+  
+  # Create shortcuts to query methods matching all conditions.
+  alias_method :find, :find_all
+  alias_method :lazy_find, :lazy_find_all
+  alias_method :first, :first_all
+  alias_method :count, :count_all
+  alias_method :delete, :delete_all
 
   private
 

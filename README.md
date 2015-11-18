@@ -248,28 +248,20 @@ store = MemStore.new(access: :[], type: :type)
 
 ### Type Restriction
 
-MemStore is able to restrict access and queries based on item type. The access methods `items`, `all` and `size` as well as all query methods (`find_*`, `lazy_find_*`, `first_*`, `count_*`, `delete_*`) optionally take a type identifier as their first parameter.
+MemStore is able to restrict access and queries based on item type. The access methods `items`, `all` and `size` as well as all query methods optionally take a type restriction as their first parameter. This can either be a single type or an array of types.
 
 ```ruby
-store.items(Person)
-# returns hash of all items of that type
-store.all(Person)
-# returns array of all items of that type
-store.size(Person)
-# returns number of all items of that type
-store.find(Person, age: 25..35)
-# returns all items of that type fulfilling the conditions
-store.lazy_find(Person, age: 25..35)
-# returns lazy enumerator to find items of that type fulfilling the conditions
-store.first(Person, age: 25..35)
-# returns first item of that type fulfilling the conditions
-store.count(Person, age: 25..35)
-# returns count of items of that type fulfilling the conditions
-store.delete(Person, age: 25..35)
-# deletes and returns array of items of that type fulfilling the conditions
+store.size(Customer)
+# returns number of customers
+store.all([Employee, Customer])
+# returns all customers and orders
+store.find(Customer, orders: &:empty?)
+# returns all customers without any orders
+store.delete([Customer, Order], obsolete: true)
+# deletes all customers and orders that are obsolete
 ```
 
-If a type is provided, the result will be restricted to only items of that type. In case of queries this filter is applied before evaluating conditions and is not affected by the query logic. See [Customization](#customization) for how to provide your own type attribute instead of using the item’s class.
+If a type restriction is provided, the result will be restricted to only items whose type matches. Query methods apply this filter before evaluating conditions, so multiple types are not combined using the query logic.
 
 ### Nonexistent Attributes
 
@@ -284,7 +276,7 @@ store.find_none(Person, age: 0..25, name: Paul)
 # result only includes Person items that fulfill the query
 ```
 
-You might also have to clean up the results of `collect`.
+You might also have to clean up the result of `collect` which currently doesn’t support type restriction.
 
 ```ruby
 store.collect(:age).reject(&:nil?)
@@ -312,7 +304,7 @@ store.find("age" => 42, "name" => "John")
 # both call item.age and item.name to retrieve attributes
 ```
 
-Type is determined using `Object#class` so you can easily restrict your queries when working with your own entity classes. Note that type comparison uses `==` so subclasses will not be matched, effectively `instance_of?` and not `kind_of?`.
+Type is determined using `Object#class` so you can easily restrict your queries when working with your own entity classes or structs. Note that type comparison doesn’t match subclasses and behaves like `instance_of?`, not like `kind_of?`.
 
 ```ruby
 store.all(MyClass)

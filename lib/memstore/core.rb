@@ -58,11 +58,8 @@ class MemStore
   # Provides access to all items as a hash, optionally restricted by type.
   # Raises NoMethodError when an item doesn't respond to the type attribute method.
   def items(type=nil)
-    if type
-      @items.select { |key, item| access_type(item) == type }
-    else
-      @items
-    end
+    return @items if type.nil?
+    @items.select { |key, item| match_type?(item, type) }
   end
 
   # Allows to set the items hash directly.
@@ -73,21 +70,15 @@ class MemStore
   # Returns all items as an array, optionally restricted by type.
   # Raises NoMethodError when an item doesn't respond to the type attribute method.
   def all(type=nil)
-    if type
-      @items.values.select { |item| access_type(item) == type }
-    else
-      @items.values
-    end
+    return @items.values if type.nil?
+    @items.values.select { |item| match_type?(item, type) }
   end
 
   # Returns total number of items in the data store, optionally restricted by type.
   # Raises NoMethodError when an item doesn't respond to the type attribute method.
   def size(type=nil)
-    if type
-      @items.select { |key, item| access_type(item) == type }.length
-    else
-      @items.length
-    end
+    return @items.length if type.nil?
+    @items.select { |key, item| match_type?(item, type) }.length
   end
 
   # Adds one item to the data store.
@@ -175,6 +166,18 @@ class MemStore
   # Returns an array of attribute values of each item.
   def collect(attribute)
     all.collect { |item| access_attribute(item, attribute) }
+  end
+  
+  private
+  
+  # Evaluates if given item matches one or move given types.
+  # 
+  # item - item to evaluate
+  # type - single type or array of types to allow
+  # 
+  # Returns boolean indicating type match.
+  def match_type?(item, type)
+    [type].flatten.include?(access_type(item))
   end
 
 end
