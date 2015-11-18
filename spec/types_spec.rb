@@ -3,7 +3,13 @@ require "memstore"
 
 describe MemStore do
 
-  FooDummy = Struct.new(:type, :id, :foo)
+  class FooDummy
+    def initialize(type, id, foo)
+      @type, @id, @foo = type, id, foo
+    end
+    attr_accessor :type, :id, :foo
+  end
+
   BarDummy = Struct.new(:type, :id, :bar)
 
   def dummy_type(dummy)
@@ -17,7 +23,7 @@ describe MemStore do
     @store = MemStore.new(key: :id, items: @items)
   end
 
-  # Accessing items by type
+  # Accessing items by type(s)
 
   it "provides access to items hash filtered by type" do
     @store.items(FooDummy).values.must_equal(@foos)
@@ -29,6 +35,10 @@ describe MemStore do
   
   it "provides access to collection size filtered by type" do
     @store.size(FooDummy).must_equal(@foos.size)
+  end
+
+  it "allows to filter by multiple types" do
+    @store.items([FooDummy, BarDummy]).must_equal(@store.items)
   end
 
   # Configuring typing
