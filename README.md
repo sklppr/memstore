@@ -173,7 +173,7 @@ store.find(age: 25) { |item| item.age - item.child.age > 20 }
 # equivalent to item.age == 25 && item.age - item.child.age > 20
 ```
 
-### Operators
+### Set Operations
 
 Since all queries return arrays, you can use set operations.  
 This can be especially useful to avoid overly complex queries.
@@ -205,7 +205,22 @@ store.find_any(...) & store.find_none(...)
 
 Note that both operators exclude duplicates and preserve order.
 
-### Collection Operations
+## Collection Operations
+
+Sometimes you want to work with items in the store, for example to run map/reduce operations. MemStore provides direct access to its items in both hash and array form. Additionally, it offers a shortcut to collect all values of a certain attribute using the specified attribute access method.
+
+### Item Enumeration
+
+You can directly access `store.items` or `store.all` and apply all respective enumeration methods.
+
+```ruby
+store.all.map { |item| "#{item.name} (#{item.age})" }
+# => ["Peter (23)", "Paul (42)", "Mary (33)"]
+store.all.reduce(0) { |sum, item| sum + item.age }
+# => 98
+```
+
+### Attribute Collection
 
 MemStore provides a shortcut to collect attribute values from all items. The result is an array and could also be used for map/reduce operations.
 
@@ -218,39 +233,62 @@ store.collect(:age).reduce(:+)
 
 This shortcut automatically uses the correct access method for attributes (see [Customization](#customization)).
 
-Of course, you can use `store.items` or `store.all` to directly work with the hash or array of items:
+## Item Types
+
+MemStore is able to deal with items of different types. By default, all items in the store are used for queries. However, you can use the type parameter to restrict 
+
+By default, MemStore uses `item.class` to identify its type, but you can specify another attribute to be used when instantiating a store or even use a custom access method (see [Customization](#customization)).
 
 ```ruby
-store.all.map { |item| "#{item.name} (#{item.age})" }
-# => ["Peter (23)", "Paul (42)", "Mary (33)"]
-store.all.reduce(0) { |sum, item| sum + item.age }
-# => 98
+store = MemStore.new(type: :type)
+# uses item.type to determine type
+store = MemStore.new(access: :[], type: :type)
+# uses item[:type] to determine type
 ```
 
-## Type Restriction
+### Type Restriction
 
 MemStore is able to restrict access and queries based on item type. The access methods `items`, `all` and `size` as well as all query methods (`find_*`, `lazy_find_*`, `first_*`, `count_*`, `delete_*`) optionally take a type identifier as their first parameter.
 
 ```ruby
-store.items(MyClass)
+store.items(Person)
 # returns hash of all items of that type
-store.all(MyClass)
+store.all(Person)
 # returns array of all items of that type
-store.size(MyClass)
+store.size(Person)
 # returns number of all items of that type
-store.find(MyClass, age: 25..35)
+store.find(Person, age: 25..35)
 # returns all items of that type fulfilling the conditions
-store.lazy_find(MyClass, age: 25..35)
+store.lazy_find(Person, age: 25..35)
 # returns lazy enumerator to find items of that type fulfilling the conditions
-store.first(MyClass, age: 25..35)
+store.first(Person, age: 25..35)
 # returns first item of that type fulfilling the conditions
-store.count(MyClass, age: 25..35)
+store.count(Person, age: 25..35)
 # returns count of items of that type fulfilling the conditions
-store.delete(MyClass, age: 25..35)
+store.delete(Person, age: 25..35)
 # deletes and returns array of items of that type fulfilling the conditions
 ```
 
 If a type is provided, the result will be restricted to only items of that type. In case of queries this filter is applied before evaluating conditions and is not affected by the query logic. See [Customization](#customization) for how to provide your own type attribute instead of using the item’s class.
+
+### Nonexistent Attributes
+
+When items don’t have a certain attribute, it is interpreted as `nil`. For hashes this is true by default and in the standard configuration MemStore also uses `nil` when objects don’t respond to an attribute accessor. You can override this behavior by defining your own attribute access method (see [Customization](#customization)).
+
+Primarily, you have to keep this in mind when constructing queries: `nil` will probably not fulfill any conditions so negated query logic will include types that don’t even have the queried attributes. To avoid this, explicitly restrict queries to the desired types.
+
+```ruby
+store.find_none(age: 0..25, name: Paul)
+# result also includes items that don't even have an age or name
+store.find_none(Person, age: 0..25, name: Paul)
+# result only includes Person items that fulfill the query
+```
+
+You might also have to clean up the results of `collect`.
+
+```ruby
+store.collect(:age).reject(&:nil?)
+```
 
 ## Customization
 

@@ -3,16 +3,16 @@ require "memstore"
 
 describe MemStore do
 
-  FooDummy = Struct.new(:type, :id)
-  BarDummy = Struct.new(:type, :id)
+  FooDummy = Struct.new(:type, :id, :foo)
+  BarDummy = Struct.new(:type, :id, :bar)
 
   def dummy_type(dummy)
     dummy.type
   end
 
   before do
-    @foos = (01..10).collect { |i| FooDummy.new("foo", i) }
-    @bars = (11..20).collect { |i| BarDummy.new("bar", i) }
+    @foos = (01..10).collect { |i| FooDummy.new("foo", i, i) }
+    @bars = (11..20).collect { |i| BarDummy.new("bar", i, i) }
     @items = @foos + @bars
     @store = MemStore.new(key: :id, items: @items)
   end
@@ -91,6 +91,22 @@ describe MemStore do
     @store.all.must_equal(@bars)
     @store.delete_none(BarDummy, id: 15..20).must_equal(@bars[0, 4])
     @store.all.must_equal(@bars[4, 6])
+  end
+  
+  # Handling types that don't have the same attributes
+  
+  it "by default uses nil when an item doesn't have an attribute" do
+    @store.access_attribute(@store.all.first, :bar).must_equal(nil)
+  end
+  
+  it "can query attributes that not all types have" do
+    @store.first(bar: 13).must_equal(@bars[2])
+    # should also not raise a NoMethodError
+  end
+  
+  it "can collect attributes that not all types have" do
+    @store.collect(:bar).must_equal(@foos.map { nil } + @bars.collect(&:bar))
+    # should also not raise a NoMethodError
   end
 
 end
